@@ -27,6 +27,7 @@
 
 import numpy as np
 import matplotlib.pyplot  as plt
+
 # def convolutional_matrix():
 #     np.convolve(output_image)
 #     kernal = []
@@ -65,9 +66,9 @@ def distance_transform_np( input_image , Dis = [1,1,1] ):
                             Jug1 = 1 + Jug1
 
 
-                    x1 = input_dim[0]+2 -x
-                    y1 = input_dim[0]+2 -y
-                    z1 = input_dim[0]+2 -z
+                    x1 = input_dim[0]+1 -x
+                    y1 = input_dim[1]+1 -y
+                    z1 = input_dim[2]+1 -z
                     if output_image2[x1, y1 ,z1] != 0:
                         jug2 = np.amin([output_image2[x1+1 , y1, z1],output_image2[x1, y1+1, z1],output_image2[x1, y1, z1+1]]),
                         if output_image2[x1, y1 ,z1] <= jug2:
@@ -79,7 +80,11 @@ def distance_transform_np( input_image , Dis = [1,1,1] ):
 
         if ( Ori > Aim and Jug1 == 1 and Jug2 == 1 ):
             break
-    return output_image1
+    
+    output_image1, output_image2
+    output_image = np.minimum(output_image1,output_image2)
+
+    return output_image
 
 
 
@@ -109,8 +114,9 @@ dim = [20,20,20]
 image = distance_transform_np(data , dim )
 # c = len(image)
 
-plt.imshow(image[:,40,:])
-plt.show()
+# np.save('risk1.npy',image)
+# plt.imshow(image[:,40,:])
+# plt.show()
 
 # print(c)
 
