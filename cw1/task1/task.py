@@ -24,9 +24,9 @@
 # ------------------------------------------------------------------
 # ------------------------------------------------------------------
 
-
 import numpy as np
 import matplotlib.pyplot  as plt
+from numpy.core.arrayprint import array_repr
 import scipy.ndimage as sc
 
 # def convolutional_matrix():
@@ -34,100 +34,69 @@ import scipy.ndimage as sc
 #     kernal = []
 #     if x,y,z
 
-def distance_transform_np( input_image , Dis = [1,1,1] ):
-    # print(input_image.shape)
-    # print(np.size(input_image))
+def distance_transform_np3( input_image , Dis = [1,1,1] ):
+
     Aim = np.sum(input_image)
     print(" Aim = " + str(Aim))
-    input_dim = input_image.shape
-    min = np.amin(input_image) 
-    max = np.amax(input_image)
 
+    input_dim = input_image.shape
+
+    # define kernal
+    kernal = np.zeros([3,3,3])
+    kernal[0,1,1] = 1;kernal[1,0,1] = 1;kernal[1,2,1] = 1;kernal[1,1,0] = 1;kernal[1,1,2] = 1;kernal[2,1,1] = 1
 
     # expand output_image 2 voxels by each coordinate 
     output_image = np.zeros([input_dim[0]+2,input_dim[1]+2,input_dim[2]+2])
-    output_image[1:input_dim[0]+1,1:input_dim[1]+1,1:input_dim[2]+1] = input_image
-    output_image1 = output_image
-    output_image2 = output_image
+    judge = np.zeros([input_dim[0]+2,input_dim[1]+2,input_dim[2]+2])
+    judge[1:input_dim[0]+1,1:input_dim[1]+1,1:input_dim[2]+1] = input_image.copy()
+    media_judge = judge.copy()
+
     
     # design matrix
-    Ori = 1
-    while True :
-        Jug1 = 1
-        Jug2 = 1
+    SUM_all = np.sum(judge)
+    print(SUM_all)
+    number = 1
+    
+    while  SUM_all != 0 :
+        
         for x in range(input_dim[0]):
             for y in range(input_dim[1]):
                 for z in range(input_dim[2]):
-                    # output_image[x+1,y+1,z+1]
-                    if output_image1[x+1,y+1,z+1] != 0:
-                        jug1 = np.amin([output_image1[x, y+1, z+1],output_image1[x+1, y, z+1],output_image1[x+1,y+1,z]])
-                        if output_image1[x+1,y+1,z+1] <= jug1:
-                            output_image1[x+1,y+1,z+1] = output_image1[x+1,y+1,z+1] + 1
-                            Ori = Ori + 1
-                            Jug1 = 1 + Jug1
+                    
+                    if judge[x+1,y+1,z+1] != 0:  #change
 
+                        jug = (np.sum(judge[x:x+3,y:y+3,z:z+3] * kernal))
 
-                    x1 = input_dim[0]+1 -x
-                    y1 = input_dim[1]+1 -y
-                    z1 = input_dim[2]+1 -z
-                    if output_image2[x1, y1 ,z1] != 0:
-                        jug2 = np.amin([output_image2[x1+1 , y1, z1],output_image2[x1, y1+1, z1],output_image2[x1, y1, z1+1]]),
-                        if output_image2[x1, y1 ,z1] <= jug2:
-                            output_image2[x1, y1 ,z1] = output_image2[x1, y1 ,z1] + 1
-                            Jug2 = Jug2 + 1
+                        if jug < 6:
 
+                            output_image[1+x,1+y,1+z] = number
+                            media_judge[x+1,y+1,z+1] = 0
 
+        
+        judge = media_judge.copy()
+        
+        SUM_all = np.sum(judge)
+        number = number + 1
 
+        print('number = ' + str(number))
+        print('SUM_all = ' + str(SUM_all))
 
-        if ( Ori > Aim and Jug1 == 1 and Jug2 == 1 ):
-            break
-    
-    # output_image1, output_image2
-    output_image = np.minimum(output_image1,output_image2)
-
-    final_output_image = output_image[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
-
-    return output_image
-
-
-
-
-
-
-    print("the max value of image is " + str(max))
-    print("the min value of image is " + str(min))
-
-    
-
-
-
-    
-    return output_image  #returnsits 3D Euclidean distance transform
-class unknown:
-    def __init__(self) -> None:
-        pass
-
-
+    return output_image[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
 
 Path_of_input = 'label_train00.npy'
 # Path_of_input = 'image_train00.npy'
 
 data = np.load(Path_of_input)
 dim = [20,20,20]
-image = distance_transform_np(data , dim )
-# c = len(image)
+image = distance_transform_np3(data , dim )
 
-# np.save('risk1.npy',image)
-# plt.imshow(image[:,40,:])
-# plt.show()
 
-# print(c)
 
 data = np.load(Path_of_input)
 good = sc.distance_transform_edt(data)
 
 plt.subplot(1, 2, 1)
-plt.imshow(image[:,36,:])
+plt.imshow(image[:,46,:])
 plt.subplot(1, 2, 2)
-plt.imshow(good[:,36,:])
+plt.imshow(good[:,46,:])
 plt.show()
