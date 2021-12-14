@@ -27,9 +27,10 @@ Path_of_jiang = 'risk1.npy'
 data = np.load(Path_of_input)
 good = sc.distance_transform_edt(data)
 data_j = np.load(Path_of_jiang)
-
+input_dim = data.shape
+hhh = data_j[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
 plt.subplot(1, 2, 1)
-plt.imshow(data_j[:,36,:])
+plt.imshow(hhh[:,38,:])
 plt.subplot(1, 2, 2)
 plt.imshow(good[:,38,:])
 plt.show()

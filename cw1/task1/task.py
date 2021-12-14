@@ -27,6 +27,7 @@
 
 import numpy as np
 import matplotlib.pyplot  as plt
+import scipy.ndimage as sc
 
 # def convolutional_matrix():
 #     np.convolve(output_image)
@@ -81,8 +82,10 @@ def distance_transform_np( input_image , Dis = [1,1,1] ):
         if ( Ori > Aim and Jug1 == 1 and Jug2 == 1 ):
             break
     
-    output_image1, output_image2
+    # output_image1, output_image2
     output_image = np.minimum(output_image1,output_image2)
+
+    final_output_image = output_image[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
 
     return output_image
 
@@ -120,3 +123,11 @@ image = distance_transform_np(data , dim )
 
 # print(c)
 
+data = np.load(Path_of_input)
+good = sc.distance_transform_edt(data)
+
+plt.subplot(1, 2, 1)
+plt.imshow(image[:,36,:])
+plt.subplot(1, 2, 2)
+plt.imshow(good[:,36,:])
+plt.show()
