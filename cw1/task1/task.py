@@ -28,7 +28,7 @@ import numpy as np
 import matplotlib.pyplot  as plt
 from numpy.core.arrayprint import array_repr
 import scipy.ndimage as sc
-
+import time
 # def convolutional_matrix():
 #     np.convolve(output_image)
 #     kernal = []
@@ -191,18 +191,102 @@ def distance_transform_np2( input_image , Dis = [1,1,1] ):
     return output_image[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
 
 
+def distance_transform_np3( input_image , Dis = [1,1,1] ):
+
+    Aim = np.sum(input_image)
+    print(" Aim = " + str(Aim))
+
+    input_dim = input_image.shape
+
+    # define kernal
+    kernal = np.zeros([3,3,3])
+    kernal[0,1,1] = 1;kernal[1,0,1] = 1;kernal[1,2,1] = 1;kernal[1,1,0] = 1;kernal[1,1,2] = 1;kernal[2,1,1] = 1
+
+    # expand output_image 2 voxels by each coordinate 
+    output_image = np.zeros([input_dim[0]+2,input_dim[1]+2,input_dim[2]+2])
+    finial_output = output_image.copy()
+    judge = np.zeros([input_dim[0]+2,input_dim[1]+2,input_dim[2]+2])
+    judge[1:input_dim[0]+1,1:input_dim[1]+1,1:input_dim[2]+1] = input_image.copy()
+    media_judge = judge.copy()
+    cal_ary = judge.copy() # calculate Euclidean distance
+
+    
+    # design matrix
+    SUM_all = np.sum(judge)
+    print(SUM_all)
+    number = 1
+    
+    while  SUM_all != 0 :
+        
+        for x in range(input_dim[0]):
+            for y in range(input_dim[1]):
+                for z in range(input_dim[2]):
+                    
+                    if judge[x+1,y+1,z+1] != 0:  #change
+
+                        jug = (np.sum(judge[x:x+3,y:y+3,z:z+3] * kernal))
+
+                        if jug < 6:
+
+                            output_image[x+1,y+1,z+1] = number
+                            media_judge[x+1,y+1,z+1] = 0
+
+        judge = media_judge.copy()
+        
+        SUM_all = np.sum(judge)
+        number = number + 1
+
+        # print('class =  ' + str(number))
+        # print('rest of uncalculated number = ' + str(SUM_all))
+
+    # calculate Euclidean distance
+    # count = 0
+    for x in range(input_dim[0]):
+        for y in range(input_dim[1]):
+            for z in range(input_dim[2]):
+                if cal_ary[x+1,y+1,z+1] == 1:
+                    sz_of_kernal = int(output_image[x+1,y+1,z+1])
+                    # cal_kernal = np.ones([sz_of_kernal,sz_of_kernal])
+                    cal_kernal = cal_ary[x+1-sz_of_kernal:x+2+sz_of_kernal,y+1-sz_of_kernal:y+2+sz_of_kernal,z+1-sz_of_kernal:z+2+sz_of_kernal]
+                    result_kernal = cal_kernal.copy()
+                    for i in range(sz_of_kernal*2 + 1):
+                        for j in range(sz_of_kernal*2 + 1):
+                            for k in range(sz_of_kernal*2 + 1):
+                                if cal_kernal[i,j,k] == 0:
+                                    result_kernal[i,j,k] = ((i - sz_of_kernal)**2 + (j-sz_of_kernal)**2 + (k-sz_of_kernal)**2) ** 0.5
+                                    # count = count + 1
+                                else :
+                                    result_kernal[i,j,k] = number
+                                    # count = count + 1
+                                    # print('sss')
+                    # select min
+                    finial_output[x+1,y+1,z+1] = np.min(result_kernal)
+                    del result_kernal
+                    # if count 
+
+
+    return finial_output[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
+
 
 Path_of_input = 'label_train00.npy'
 # Path_of_input = 'image_train00.npy'
 
 data = np.load(Path_of_input)
 dim = [20,20,20]
-image = distance_transform_np2(data , dim )
+
+time1_start = time.time()
+image = distance_transform_np3(data , dim )
+time1_end = time.time()
+print("student_code running time = " + str(time1_end - time1_start))
 
 
 
 data = np.load(Path_of_input)
+time2_start = time.time()
 good = sc.distance_transform_edt(data)
+time2_end = time.time()
+
+print("edt running time = " + str(time2_end - time2_start))
 
 plt.subplot(2, 2, 1)
 plt.imshow(image[:,46,:])
