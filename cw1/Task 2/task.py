@@ -28,10 +28,11 @@ def surface_normals_np(vertex, triangle):
         Coordinate_Third = vertex[Third_point]
         # print('first ' + str(Coordinate_First) + ' second ' + str(Coordinate_Second) + ' Third ' +str(Coordinate_Third))
 
-        # calculate normal vector
+        # 
         x = Coordinate_Second - Coordinate_First
         y = Coordinate_Third - Coordinate_First
-        # print('X: ' + str(x) + '   Y: '+ str(y))
+
+        # calculate normal vector
         Normal_triangle_centres[i] = np.cross(x,y)
 
 
@@ -77,12 +78,23 @@ def surface_normals_np(vertex, triangle):
 
     return Normal_vertices ,Normal_triangle_centres
 
+
+
+
+# get data from marching_cube
 info = marching_cubes(data)
 vertex = info[0]
 triangle = info[1]
 march_nor = info[2]
 
+# get data from function
 vertex_normal_vector,triangle_normal_vector = surface_normals_np(vertex,triangle)
+
+# 
+
+
+
+
 
 
 plt.imshow(data[:,36,:])
