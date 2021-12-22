@@ -190,7 +190,6 @@ def distance_transform_np2( input_image , Dis = [1,1,1] ):
 
     return output_image[1:input_dim[0],1:input_dim[1],1:input_dim[2]]
 
-
 def distance_transform_np3( input_image , Dis = [1,1,1] ):
 
     Aim = np.sum(input_image)
@@ -205,7 +204,7 @@ def distance_transform_np3( input_image , Dis = [1,1,1] ):
     # expand output_image 2 voxels by each coordinate 
     output_image = np.zeros([input_dim[0]+2,input_dim[1]+2,input_dim[2]+2])
     finial_output = output_image.copy()
-    judge = np.zeros([input_dim[0]+2,input_dim[1]+2,input_dim[2]+2])
+    judge = output_image.copy()
     judge[1:input_dim[0]+1,1:input_dim[1]+1,1:input_dim[2]+1] = input_image.copy()
     media_judge = judge.copy()
     cal_ary = judge.copy() # calculate Euclidean distance
@@ -249,6 +248,8 @@ def distance_transform_np3( input_image , Dis = [1,1,1] ):
                     # cal_kernal = np.ones([sz_of_kernal,sz_of_kernal])
                     cal_kernal = cal_ary[x+1-sz_of_kernal:x+2+sz_of_kernal,y+1-sz_of_kernal:y+2+sz_of_kernal,z+1-sz_of_kernal:z+2+sz_of_kernal]
                     result_kernal = cal_kernal.copy()
+
+                    # calculate kernal distance
                     for i in range(sz_of_kernal*2 + 1):
                         for j in range(sz_of_kernal*2 + 1):
                             for k in range(sz_of_kernal*2 + 1):
