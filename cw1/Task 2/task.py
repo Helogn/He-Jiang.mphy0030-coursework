@@ -72,10 +72,9 @@ def surface_normals_np(vertex, triangle):
         Normalization = (x*x + y*y + z*z) ** 0.5
         Normal_vertices[i] = [x/Normalization,y/Normalization,z/Normalization]
 
-        Normal_vertices = np.array(Normal_vertices)
+    Normal_vertices = np.array(Normal_vertices)
 
-    print('successful')
-
+    print('shape' + str(Normal_vertices.shape))
     return Normal_vertices ,Normal_triangle_centres
 
 
@@ -85,20 +84,31 @@ def surface_normals_np(vertex, triangle):
 info = marching_cubes(data)
 vertex = info[0]
 triangle = info[1]
-march_nor = info[2]
+Vertex_March_cube = info[2]
 
 # get data from function
-vertex_normal_vector,triangle_normal_vector = surface_normals_np(vertex,triangle)
+Vertex_Normal_Vector,triangle_normal_vector = surface_normals_np(vertex,triangle)
 
-# 
+# Compare normal vectors from two implementatinos
+# dot product from two implementation
+sz = Vertex_Normal_Vector.shape
+dot_product = [[] for row in range(sz[0])]
+for i in range(sz[0]):
+    dot_product[i] = np.dot(Vertex_Normal_Vector[i],Vertex_March_cube[i])
 
 
 
 
 
 
-plt.imshow(data[:,36,:])
-plt.show()
+
+
+
+
+
+
+# plt.imshow(data[:,36,:])
+# plt.show()
 
 print('world')
 

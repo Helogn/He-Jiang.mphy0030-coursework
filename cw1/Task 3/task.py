@@ -8,7 +8,9 @@ class Image3D :
         self.Array = Array
         self.dims = dims
 
-    def warp(self):
+    def warp(self,parameter = []):
+
+        
 
         self.d
 
