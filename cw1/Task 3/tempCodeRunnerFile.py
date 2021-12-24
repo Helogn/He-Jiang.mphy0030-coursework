@@ -1,0 +1,2 @@
+
+            Tz = parameter[2]

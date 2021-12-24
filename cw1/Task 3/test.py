@@ -1,24 +1,14 @@
+# def mymax(a:str = "12345",b:str = "123456789"):
+#     return max(len(a),len(b))
+# def mymax(a :int = 0,b:int = 1):
+#     return max(a,b)
+
+# print(mymax("one","three"))
+# print(mymax(1,3))#AllArgs
+# print(mymax())#NoArgs
 import numpy as np
+class hhh:
 
-class Image3D :
-
-    def __init__(self,Array,dims =[1,1,1] ):
-
-
-        self.Array = Array
-        self.dims = dims
-
-    def warp(self,parameter = []):
-
-        
-
-        self.d
-
-
-class Affinetransform :
-    def __init__(self, trans):
-
-        self.trans = trans
     def rigid_transform (self, parameter = None):
         
         # judge data type
@@ -61,30 +51,15 @@ class Affinetransform :
             T = [Tx, Ty, Tz]
 
 
-    def affine_transform (self, parameter = None):
-        
-        # judge data type
-        if isinstance(parameter,(list,float,np.ndarray)) == False:
-            parameter = np.array(parameter)
-            print('Error Input Vertor Type')
-            return
-
-        self.parameter = parameter
-        self.parameter = np.reshape(self.parameter,-1)
-        length = len(self.parameter)
-
-        # judge length of vector
-        if (length in [0,6,7,12]) == False:
-            print('Error Input Vertor Length')
-            return
-
-        # Random affine generation
-        if length == 0:
-            return
-
-
         if length == 7:
             return
         if length == 12:
             return
 
+    
+he = hhh()
+A = np.ones([2,6])
+he.rigid_transform(A)
+# print(np.cos([1, 0, 0; 0, np.cos(Rx), -np.sin(Rx); 0, np.sin(Rx), np.cos(Rx)]))
+
+print(np.ones([2,2]))
