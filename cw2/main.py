@@ -1,9 +1,13 @@
 # 2022-1-2
 # from pathlib import Path
+from PIL import Image
 import SimpleITK as sitk
+from SimpleITK.SimpleITK import BilateralImageFilter
 # from skimage.measure import marching_cubes
 import matplotlib.pyplot  as plt
 import numpy as np
+# from PIL import Image
+import PIL
 
 def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
 
@@ -63,6 +67,15 @@ def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
             Result2[tx,ty] = Result[2,N]
             # print("point: "+str([Result[0,i],Result[1,i]]) + " value " + str(Result[2,i]))
 
+        # Result3 = Result2.tolist()
+        im = PIL.Image.fromarray(Result2)
+        # Test_im = im.resize( size = [sz[1],sz[0]], resample=2, box=None, reducing_gap=None)
+        sz1 = [sz[1],sz[0]]
+        Test_im = im.resize( size = sz1, resample=2, box=None, reducing_gap=None)
+        # Test_im.show()
+        Result4 = np.array(Test_im)
+
+
     if len(sz) == 23:
 
         i = x
@@ -72,20 +85,95 @@ def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
 
     Output_Image = []
 
-    return Result2
+    return Result4
+
+
+def nonlinear_filter(Image,iteration = 5, K = 0.3):
+
+    # Image : input Image
+    # iteration: Times of Iteration
+    
+    # Ori_Img = image
+
+    # halt
+    sz = Image.shape
+    if len(sz) == 2:
+        DIM = 2
+        # E_East =   np.array([[0,0,0],[0,-1,1],[0,0,0]])
+        # E_West =   np.array([[0,0,0],[-1,1,0],[0,0,0]])
+        # E_South =  np.array([[0,0,0],[0,-1,0],[0,1,0]])
+        # E_North =  np.array([[0,-1,0],[0,1,0],[0,0,0]])
+        for t in range(iteration):
+            for i in range(sz[0]-1):
+                for j in range(sz[1]-1):
+                    N_I = Image[i,j+1] - Image[i,j] # North direction Calculation
+                    S_I = Image[i,j] - Image[i,j-1] # Sorth direction Calculation
+                    E_I = Image[i+1,j] - Image[i,j] # East direction Calculation
+                    W_I = Image[i,j] - Image[i-1,j] # West direction Calculation
+
+                    # diffusion function
+                    C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
+                    C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
+                    C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
+                    C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
+
+                    Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I)
+
+
+    elif len(sz) == 3:
+        DIM = 3
+        E_East  = np.zeros([3,3,3]);  E_East[2,1,1]  =  1; E_East[1,1,1]  = -1 
+        E_West  = np.zeros([3,3,3]);  E_West[0,1,1]  = -1; E_West[1,1,1]  =  1 
+        E_South = np.zeros([3,3,3]);  E_South[1,1,0] = -1; E_South[1,1,1] =  1 
+        E_North = np.zeros([3,3,3]);  E_North[1,1,2] =  1; E_East[1,1,1]  = -1 
+        E_Inf   = np.zeros([3,3,3]);  E_Inf[1,0,1]   = -1; E_Inf[1,1,1]   =  1
+        E_Behi  = np.zeros([3,3,3]);  E_Behi[1,2,1]  =  1; E_Behi[1,1,1]  = -1
+        
+    else:
+        print('Wrong dimension of image')
+        return
+
+    for t in range (iteration):
+        t_img = np.zeros(sz)
+
+    return Image
+
+
+
+
+
+
+
 # 0001.nii is image file
-Path_of_image = './0001.nii'
+Path_of_image = './0001_image.nii'
+Path_of_label = './0001_mask.nii'
 
 data = sitk.ReadImage(Path_of_image )
 array_of_data = sitk.GetArrayFromImage(data)
+data_label = sitk.ReadImage(Path_of_label )
+array_of_label = sitk.GetArrayFromImage(data_label)
+print('shape of ' + str(array_of_label.shape))
+Slice = 150
+Result = reslice(array_of_data[Slice,:,:],[1,0],[0.1,1.1])
+
+hhh = nonlinear_filter(Result,3,0.2)
+
+# im = Image.new( mode = "RGB", size = (200, 200), color = (153, 153, 255))
+# im = Image.frombytes(mode = "RGB", size = (200, 200), data = Result ,decoder_name="raw")
 
 
-Result = reslice(array_of_data[50,:,:],[-1.5,1.5],[0,1])
 
-plt.subplot(1, 2, 1)
-plt.imshow(Result)
-plt.subplot(1, 2, 2)
-plt.imshow(array_of_data[50,:,:])
+# print(np.squeeze(array_of_label[1,:,Slice,:]).shape)
+plt.subplot(2, 2, 1)
+plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
+plt.title('Mask')
+plt.subplot(2, 2, 2)
+plt.imshow(array_of_data[Slice,:,:])
 plt.title('Original image')
+plt.subplot(2, 2, 3)
+plt.imshow(hhh)
+
 plt.show()
 print(Result.shape)
+
+# Image.RASTERIZE
