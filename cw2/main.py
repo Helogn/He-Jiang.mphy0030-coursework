@@ -5,6 +5,7 @@ import SimpleITK as sitk
 from SimpleITK.SimpleITK import BilateralImageFilter
 # from skimage.measure import marching_cubes
 import matplotlib.pyplot  as plt
+import matplotlib.image as img
 import numpy as np
 # from PIL import Image
 import PIL
@@ -88,7 +89,7 @@ def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
     return Result4
 
 
-def nonlinear_filter(Image,iteration = 5, K = 0.3):
+def nonlinear_filter(Image,iteration = 5, K = 0.3, L = 0.2):
 
     # Image : input Image
     # iteration: Times of Iteration
@@ -99,62 +100,120 @@ def nonlinear_filter(Image,iteration = 5, K = 0.3):
     sz = Image.shape
     DIM = len(sz)
     if DIM == 2:
-        
+        print(" DIM = 2 \n size = " + str(sz))
         # E_East =   np.array([[0,0,0],[0,-1,1],[0,0,0]])
         # E_West =   np.array([[0,0,0],[-1,1,0],[0,0,0]])
         # E_South =  np.array([[0,0,0],[0,-1,0],[0,1,0]])
-        # E_North =  np.array([[0,-1,0],[0,1,0],[0,0,0]])
+        # E_North =  np.array([[0,-1,0],[0,1,0],[0,0,0]])、
+        # -----------------------------------------------------------------
+        # for t in range(iteration):
+        #     for i in range(sz[0]-1):
+        #         for j in range(sz[1]-1):
+        #             N_I = Image[i,j+1] - Image[i,j] # North direction Calculation
+        #             S_I = Image[i,j] - Image[i,j-1] # Sorth direction Calculation
+        #             E_I = Image[i+1,j] - Image[i,j] # East direction Calculation
+        #             W_I = Image[i,j] - Image[i-1,j] # West direction Calculation
+
+        #             # diffusion function
+        #             C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
+        #             C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
+        #             C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
+        #             C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
+
+        #             Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I)
+        # --------------------------------------------------------------
+        O_Image = np.zeros([sz[0]+2,sz[1]+2])
+
+        # print('Image shape ' + str(Image.shape))
+        # print(O_Image[1:sz[0],1:sz[1],1:sz[2]].shape)
         for t in range(iteration):
-            for i in range(sz[0]-1):
-                for j in range(sz[1]-1):
-                    N_I = Image[i,j+1] - Image[i,j] # North direction Calculation
-                    S_I = Image[i,j] - Image[i,j-1] # Sorth direction Calculation
-                    E_I = Image[i+1,j] - Image[i,j] # East direction Calculation
-                    W_I = Image[i,j] - Image[i-1,j] # West direction Calculation
+            N_Image = O_Image.copy()
+            S_Image = O_Image.copy()
+            E_Image = O_Image.copy()
+            W_Image = O_Image.copy()
 
-                    # diffusion function
-                    C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
-                    C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
-                    C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
-                    C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
+            O_Image[1:sz[0]+1,1:sz[1]+1] = Image
+            N_Image[1:sz[0]+1,2:sz[1]+2] = Image
+            S_Image[1:sz[0]+1,0:sz[1]  ] = Image
+            E_Image[2:sz[0]+2,1:sz[1]+1] = Image
+            W_Image[0:sz[0]  ,1:sz[1]+1] = Image
 
-                    Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I)
+            N_Image = N_Image - O_Image; C_N_Image = np.exp(-N_Image*N_Image/K/K)
+            S_Image = O_Image - S_Image; C_S_Image = np.exp(-S_Image*S_Image/K/K)
+            E_Image = E_Image - O_Image; C_E_Image = np.exp(-E_Image*E_Image/K/K)
+            W_Image = O_Image - W_Image; C_W_Image = np.exp(-W_Image*W_Image/K/K)
 
+            O_Image = O_Image + L*(N_Image*C_N_Image + S_Image*C_S_Image + E_Image*C_E_Image+ W_Image*C_W_Image )
+
+        return O_Image[1:sz[0]+1,1:sz[1]+1]
 
     elif DIM == 3:
 
-        for t in range(iteration):
-            for i in range(sz[0]-1):
+        # for t in range(iteration):
+        #     for i in range(sz[0]-1):
                 
-                for j in range(sz[1]-1):
+        #         for j in range(sz[1]-1):
                     
-                    for k in range(sz[2]-1):
+        #             for k in range(sz[2]-1):
                     
                     
-                        N_I = Image[i,j+1,k] - Image[i,j,k] # North direction Calculation
-                        S_I = Image[i,j,k] - Image[i,j-1,k] # Sorth direction Calculation
-                        E_I = Image[i+1,j,k] - Image[i,j,k] # East direction Calculation
-                        W_I = Image[i,j,k] - Image[i-1,j,k] # West direction Calculation
-                        I_I = Image[i,j,k+1] - Image[i,j,k] # infront direction Calculation
-                        B_I = Image[i,j,k] - Image[i,j,k-1] # behind direction Calculation
+        #                 N_I = Image[i,j+1,k] - Image[i,j,k] # North direction Calculation
+        #                 S_I = Image[i,j,k] - Image[i,j-1,k] # Sorth direction Calculation
+        #                 E_I = Image[i+1,j,k] - Image[i,j,k] # East direction Calculation
+        #                 W_I = Image[i,j,k] - Image[i-1,j,k] # West direction Calculation
+        #                 I_I = Image[i,j,k+1] - Image[i,j,k] # infront direction Calculation
+        #                 B_I = Image[i,j,k] - Image[i,j,k-1] # behind direction Calculation
 
-                       # diffusion function
-                        C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
-                        C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
-                        C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
-                        C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
-                        C_I_I = np.exp(-I_I*I_I/K/K) # Diffusion function of Northern? direction
-                        C_B_I = np.exp(-B_I*B_I/K/K) # Diffusion function of Northern? direction
+        #                # diffusion function
+        #                 C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
+        #                 C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
+        #                 C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
+        #                 C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
+        #                 C_I_I = np.exp(-I_I*I_I/K/K) # Diffusion function of Northern? direction
+        #                 C_B_I = np.exp(-B_I*B_I/K/K) # Diffusion function of Northern? direction
 
-                        Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I*W_I + C_I_I*I_I + C_B_I*B_I)
-                    
+        #                 Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I*W_I + C_I_I*I_I + C_B_I*B_I)
         
+        O_Image = np.zeros([sz[0]+2,sz[1]+2,sz[2]+2])
+        for t in range(iteration):
+
+            N_Image = O_Image.copy()
+            S_Image = O_Image.copy()
+            E_Image = O_Image.copy()
+            W_Image = O_Image.copy()
+            I_Image = O_Image.copy()
+            B_Image = O_Image.copy()
+
+            O_Image[1:sz[0]+1,1:sz[1]+1,1:sz[2]+1] = Image
+            N_Image[1:sz[0]+1,2:sz[1]+2,1:sz[2]+1] = Image
+            S_Image[1:sz[0]+1,0:sz[1]  ,1:sz[2]+1] = Image
+            E_Image[2:sz[0]+2,1:sz[1]+1,1:sz[2]+1] = Image
+            W_Image[0:sz[0]  ,1:sz[1]+1,1:sz[2]+1] = Image
+            I_Image[1:sz[0]+1,1:sz[1]+1,2:sz[2]+2] = Image
+            B_Image[1:sz[0]+1,1:sz[1]+1,0:sz[2]  ] = Image
+
+            N_Image = N_Image - O_Image; C_N_Image = np.exp(-N_Image*N_Image/K/K)
+            S_Image = O_Image - S_Image; C_S_Image = np.exp(-S_Image*S_Image/K/K)
+            E_Image = E_Image - O_Image; C_E_Image = np.exp(-E_Image*E_Image/K/K)
+            W_Image = O_Image - W_Image; C_W_Image = np.exp(-W_Image*W_Image/K/K)
+            I_Image = I_Image - O_Image; C_I_Image = np.exp(-I_Image*I_Image/K/K)
+            B_Image = O_Image - B_Image; C_B_Image = np.exp(-B_Image*B_Image/K/K)
+
+            O_Image = O_Image + L*(N_Image*C_N_Image + S_Image*C_S_Image + E_Image*C_E_Image+ W_Image*C_W_Image + I_Image*C_I_Image + B_Image*C_B_Image)
+
+        return O_Image[1:sz[0]+1,1:sz[1]+1,1:sz[2]+1]
+
+        print('success2')
+
+
+
+
     else:
         print('Wrong dimension of image')
         return
 
 
-    return Image
+    
 
 
 
@@ -170,18 +229,14 @@ data = sitk.ReadImage(Path_of_image )
 array_of_data = sitk.GetArrayFromImage(data)
 data_label = sitk.ReadImage(Path_of_label )
 array_of_label = sitk.GetArrayFromImage(data_label)
-print('shape of ' + str(array_of_label.shape))
-Slice = 150
+Slice = 140
 Result = reslice(array_of_data[Slice,:,:],[1,0],[0.1,1.1])
 
-hhh = nonlinear_filter(array_of_data,1,0.2)
+hhh = nonlinear_filter(array_of_data,3,0.2)
 
 # im = Image.new( mode = "RGB", size = (200, 200), color = (153, 153, 255))
 # im = Image.frombytes(mode = "RGB", size = (200, 200), data = Result ,decoder_name="raw")
 
-
-
-# print(np.squeeze(array_of_label[1,:,Slice,:]).shape)
 plt.subplot(2, 2, 1)
 plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
 plt.title('Mask')
@@ -189,9 +244,29 @@ plt.subplot(2, 2, 2)
 plt.imshow(array_of_data[Slice,:,:])
 plt.title('Original image')
 plt.subplot(2, 2, 3)
-plt.imshow(hhh[10,:,:])
-
+plt.imshow(hhh[Slice,:,:])
+plt.subplot(2,2,4)
+plt.imshow(hhh[Slice,:,:] - array_of_data[Slice,:,:])
 plt.show()
 print(Result.shape)
+
+
+# ---------------------test----------------------------
+# PNG_Path = 'R.jpg'
+# IM = img.imread(PNG_Path)
+# IM2 = nonlinear_filter(np.squeeze(IM[:,:,1]),3,0.2,0.2)
+
+# plt.subplot(2,2,1)
+# plt.imshow(IM[:,:,1])
+# plt.subplot(2,2,2)
+# plt.imshow(IM2)
+# plt.subplot(2,2,3)
+# plt.imshow(np.squeeze(IM[:,:,1])-IM2)
+# plt.show()
+# ---------------------test----------------------------
+
+
+# IM = PIL.Image.open(PNG_Path)
+# IM.show()
 
 # Image.RASTERIZE
