@@ -97,8 +97,9 @@ def nonlinear_filter(Image,iteration = 5, K = 0.3):
 
     # halt
     sz = Image.shape
-    if len(sz) == 2:
-        DIM = 2
+    DIM = len(sz)
+    if DIM == 2:
+        
         # E_East =   np.array([[0,0,0],[0,-1,1],[0,0,0]])
         # E_West =   np.array([[0,0,0],[-1,1,0],[0,0,0]])
         # E_South =  np.array([[0,0,0],[0,-1,0],[0,1,0]])
@@ -120,21 +121,38 @@ def nonlinear_filter(Image,iteration = 5, K = 0.3):
                     Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I)
 
 
-    elif len(sz) == 3:
-        DIM = 3
-        E_East  = np.zeros([3,3,3]);  E_East[2,1,1]  =  1; E_East[1,1,1]  = -1 
-        E_West  = np.zeros([3,3,3]);  E_West[0,1,1]  = -1; E_West[1,1,1]  =  1 
-        E_South = np.zeros([3,3,3]);  E_South[1,1,0] = -1; E_South[1,1,1] =  1 
-        E_North = np.zeros([3,3,3]);  E_North[1,1,2] =  1; E_East[1,1,1]  = -1 
-        E_Inf   = np.zeros([3,3,3]);  E_Inf[1,0,1]   = -1; E_Inf[1,1,1]   =  1
-        E_Behi  = np.zeros([3,3,3]);  E_Behi[1,2,1]  =  1; E_Behi[1,1,1]  = -1
+    elif DIM == 3:
+
+        for t in range(iteration):
+            for i in range(sz[0]-1):
+                
+                for j in range(sz[1]-1):
+                    
+                    for k in range(sz[2]-1):
+                    
+                    
+                        N_I = Image[i,j+1,k] - Image[i,j,k] # North direction Calculation
+                        S_I = Image[i,j,k] - Image[i,j-1,k] # Sorth direction Calculation
+                        E_I = Image[i+1,j,k] - Image[i,j,k] # East direction Calculation
+                        W_I = Image[i,j,k] - Image[i-1,j,k] # West direction Calculation
+                        I_I = Image[i,j,k+1] - Image[i,j,k] # infront direction Calculation
+                        B_I = Image[i,j,k] - Image[i,j,k-1] # behind direction Calculation
+
+                       # diffusion function
+                        C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
+                        C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
+                        C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
+                        C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
+                        C_I_I = np.exp(-I_I*I_I/K/K) # Diffusion function of Northern? direction
+                        C_B_I = np.exp(-B_I*B_I/K/K) # Diffusion function of Northern? direction
+
+                        Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I*W_I + C_I_I*I_I + C_B_I*B_I)
+                    
         
     else:
         print('Wrong dimension of image')
         return
 
-    for t in range (iteration):
-        t_img = np.zeros(sz)
 
     return Image
 
@@ -156,7 +174,7 @@ print('shape of ' + str(array_of_label.shape))
 Slice = 150
 Result = reslice(array_of_data[Slice,:,:],[1,0],[0.1,1.1])
 
-hhh = nonlinear_filter(Result,3,0.2)
+hhh = nonlinear_filter(array_of_data,1,0.2)
 
 # im = Image.new( mode = "RGB", size = (200, 200), color = (153, 153, 255))
 # im = Image.frombytes(mode = "RGB", size = (200, 200), data = Result ,decoder_name="raw")
@@ -171,7 +189,7 @@ plt.subplot(2, 2, 2)
 plt.imshow(array_of_data[Slice,:,:])
 plt.title('Original image')
 plt.subplot(2, 2, 3)
-plt.imshow(hhh)
+plt.imshow(hhh[10,:,:])
 
 plt.show()
 print(Result.shape)
