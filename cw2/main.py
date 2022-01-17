@@ -1,18 +1,17 @@
 # 2022-1-2
-# from pathlib import Path
+
 from PIL import Image
 import SimpleITK as sitk
 from SimpleITK.SimpleITK import BilateralImageFilter
-# from skimage.measure import marching_cubes
 import matplotlib.pyplot  as plt
 import matplotlib.image as img
 import numpy as np
 # from PIL import Image
 import PIL
 
-def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
+def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
 
-    sz = Image.shape
+    sz = Ori_Image.shape
 
 
     # ----------------for 2D image----------------------
@@ -45,7 +44,7 @@ def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
         
         for i in range (sz[0]):
             for j in range (sz[1]):
-                Coordinate_Matrix.append([i,j,Image[i,j]])
+                Coordinate_Matrix.append([i,j,Ori_Image[i,j]])
 
         if len(x) == 2:
             x.append(0)
@@ -55,8 +54,10 @@ def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
         Coordinate_Matrix = np.array(Coordinate_Matrix)
         Coordinate_Matrix = np.transpose(Coordinate_Matrix)
 
+        # Transform matrix * Coordinate 
         Result = np.dot(Trans_matrix, Coordinate_Matrix)
         sz_Result = Result.shape
+        print("max Result" + str(np.max(Result,1)))
         Range = np.int16(np.max(Result,1)-np.min(Result,1))
 
         Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1])-1000)
@@ -76,20 +77,83 @@ def reslice (Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
         # Test_im.show()
         Result4 = np.array(Test_im)
 
-
-    if len(sz) == 23:
-
-        i = x
-        j = y
-        k = z
+        return Result4
 
 
-    Output_Image = []
+    if len(sz) == 3:
 
-    return Result4
+        x1 = np.array(x)
+        y1 = np.array(y)
+        z1 = np.array(z)
+        length_x = np.linalg.norm(x1)
+        length_y = np.linalg.norm(y1)
+        length_z = np.linalg.norm(z1)
+
+        x = (x / length_x).tolist()
+        y = (y / length_y).tolist()
+        z = (z / length_z).tolist()
+
+        Coordinate_Matrix = []
+        
+        for i in range (sz[0]):
+            for j in range (sz[1]):
+                for k in range (sz[1]):
+                    Coordinate_Matrix.append([i,j,k,Ori_Image[i,j,k]])
+        print(' finish Creating Matrix')
+        if len(x) == 3:
+            x.append(0)
+            y.append(0)
+            z.append(0)
+
+        Trans_matrix = np.array([x,y,z,[0,0,0,1]])
+        Coordinate_Matrix = np.array(Coordinate_Matrix)
+        Coordinate_Matrix = np.transpose(Coordinate_Matrix)
+
+        Result = np.dot(Trans_matrix, Coordinate_Matrix)
+
+        print(' finish Calculating Matrix')
+        sz_Result = Result.shape
+        Range = np.int16(np.max(Result,1)-np.min(Result,1))
+
+        Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1])-1000)
+        print(sz_Result[1])
+        for N in range (sz_Result[1]):
+            # print([Result[0,N],Result[1,N]])
+            tx = np.int16(Result[0,N])
+            ty = np.int16(Result[1,N])
+            tz = np.int16(Result[2,N])
+            Result2[tx,ty,tz] = Result[3,N]
+            # print("point: "+str([Result[0,i],Result[1,i]]) + " value " + str(Result[2,i]))
 
 
-def nonlinear_filter(Image,iteration = 5, K = 0.3, L = 0.2):
+# -------------- calculate slowly ------------------------------
+        # X = np.linspace(min(Result[0,:]), max(Result[0,:]))
+        # Y = np.linspace(min(Result[1,:]), max(Result[1,:]))
+        # Z = np.linspace(min(Result[2,:]), max(Result[2,:]))
+        # print(' finish linspace')
+        # X, Y, Z = np.meshgrid(X, Y, Z)  # 2D grid for interpolation
+        
+        # interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
+        # print(' finish Linear')
+        # V = interp(X, Y, Z)
+        # print(' finish interpolating')
+# ----------------------------------------------------------------
+# -------------- RBF ---------------------------------------------
+# rng = np.random.default_rng()
+
+
+# -------------------------------------------------------
+
+        return Result2
+
+
+    else :
+        return
+
+    
+
+
+def nonlinear_filter(Image,iteration = 5, K = 30, L = 0.2):
 
     # Image : input Image
     # iteration: Times of Iteration
@@ -101,31 +165,9 @@ def nonlinear_filter(Image,iteration = 5, K = 0.3, L = 0.2):
     DIM = len(sz)
     if DIM == 2:
         print(" DIM = 2 \n size = " + str(sz))
-        # E_East =   np.array([[0,0,0],[0,-1,1],[0,0,0]])
-        # E_West =   np.array([[0,0,0],[-1,1,0],[0,0,0]])
-        # E_South =  np.array([[0,0,0],[0,-1,0],[0,1,0]])
-        # E_North =  np.array([[0,-1,0],[0,1,0],[0,0,0]])、
-        # -----------------------------------------------------------------
-        # for t in range(iteration):
-        #     for i in range(sz[0]-1):
-        #         for j in range(sz[1]-1):
-        #             N_I = Image[i,j+1] - Image[i,j] # North direction Calculation
-        #             S_I = Image[i,j] - Image[i,j-1] # Sorth direction Calculation
-        #             E_I = Image[i+1,j] - Image[i,j] # East direction Calculation
-        #             W_I = Image[i,j] - Image[i-1,j] # West direction Calculation
-
-        #             # diffusion function
-        #             C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
-        #             C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
-        #             C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
-        #             C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
-
-        #             Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I)
         # --------------------------------------------------------------
         O_Image = np.zeros([sz[0]+2,sz[1]+2])
 
-        # print('Image shape ' + str(Image.shape))
-        # print(O_Image[1:sz[0],1:sz[1],1:sz[2]].shape)
         for t in range(iteration):
             N_Image = O_Image.copy()
             S_Image = O_Image.copy()
@@ -142,37 +184,14 @@ def nonlinear_filter(Image,iteration = 5, K = 0.3, L = 0.2):
             S_Image = O_Image - S_Image; C_S_Image = np.exp(-S_Image*S_Image/K/K)
             E_Image = E_Image - O_Image; C_E_Image = np.exp(-E_Image*E_Image/K/K)
             W_Image = O_Image - W_Image; C_W_Image = np.exp(-W_Image*W_Image/K/K)
-
+            
+            # print(A)
+            # print("hhhh")
             O_Image = O_Image + L*(N_Image*C_N_Image + S_Image*C_S_Image + E_Image*C_E_Image+ W_Image*C_W_Image )
 
         return O_Image[1:sz[0]+1,1:sz[1]+1]
 
     elif DIM == 3:
-
-        # for t in range(iteration):
-        #     for i in range(sz[0]-1):
-                
-        #         for j in range(sz[1]-1):
-                    
-        #             for k in range(sz[2]-1):
-                    
-                    
-        #                 N_I = Image[i,j+1,k] - Image[i,j,k] # North direction Calculation
-        #                 S_I = Image[i,j,k] - Image[i,j-1,k] # Sorth direction Calculation
-        #                 E_I = Image[i+1,j,k] - Image[i,j,k] # East direction Calculation
-        #                 W_I = Image[i,j,k] - Image[i-1,j,k] # West direction Calculation
-        #                 I_I = Image[i,j,k+1] - Image[i,j,k] # infront direction Calculation
-        #                 B_I = Image[i,j,k] - Image[i,j,k-1] # behind direction Calculation
-
-        #                # diffusion function
-        #                 C_N_I = np.exp(-N_I*N_I/K/K) # Diffusion function of Northern? direction
-        #                 C_S_I = np.exp(-S_I*S_I/K/K) # Diffusion function of Northern? direction
-        #                 C_E_I = np.exp(-E_I*E_I/K/K) # Diffusion function of Northern? direction
-        #                 C_W_I = np.exp(-W_I*W_I/K/K) # Diffusion function of Northern? direction
-        #                 C_I_I = np.exp(-I_I*I_I/K/K) # Diffusion function of Northern? direction
-        #                 C_B_I = np.exp(-B_I*B_I/K/K) # Diffusion function of Northern? direction
-
-        #                 Image = Image + K*(C_N_I*N_I + C_S_I*S_I + C_E_I*E_I + C_W_I*W_I + C_I_I*I_I + C_B_I*B_I)
         
         O_Image = np.zeros([sz[0]+2,sz[1]+2,sz[2]+2])
         for t in range(iteration):
@@ -203,66 +222,151 @@ def nonlinear_filter(Image,iteration = 5, K = 0.3, L = 0.2):
 
         return O_Image[1:sz[0]+1,1:sz[1]+1,1:sz[2]+1]
 
-        print('success2')
-
-
-
-
     else:
         print('Wrong dimension of image')
         return
+def resize_image_itk(ori_img, target_img, resamplemethod=sitk.sitkNearestNeighbor):
+    """
+    用itk方法将原始图像resample到与目标图像一致
+    :param ori_img: 原始需要对齐的itk图像
+    :param target_img: 要对齐的目标itk图像
+    :param resamplemethod: itk插值方法: sitk.sitkLinear-线性  sitk.sitkNearestNeighbor-最近邻
+    :return:img_res_itk: 重采样好的itk图像
+    使用示范：
+    import SimpleITK as sitk
+    target_img = sitk.ReadImage(target_img_file)
+    ori_img = sitk.ReadImage(ori_img_file)
+    img_r = resize_image_itk(ori_img, target_img, resamplemethod=sitk.sitkLinear)
+    """
+    target_Size = target_img.GetSize()      # 目标图像大小  [x,y,z]
+    target_Spacing = target_img.GetSpacing()   # 目标的体素块尺寸    [x,y,z]
+    target_origin = target_img.GetOrigin()      # 目标的起点 [x,y,z]
+    target_direction = target_img.GetDirection()  # 目标的方向 [冠,矢,横]=[z,y,x]
 
-
-    
-
-
-
-
-
-
+    # itk的方法进行resample
+    resampler = sitk.ResampleImageFilter()
+    resampler.SetReferenceImage(ori_img)  # 需要重新采样的目标图像
+    # 设置目标图像的信息
+    resampler.SetSize(target_Size)		# 目标图像大小
+    resampler.SetOutputOrigin(target_origin)
+    resampler.SetOutputDirection(target_direction)
+    resampler.SetOutputSpacing(target_Spacing)
+    # 根据需要重采样图像的情况设置不同的dype
+    if resamplemethod == sitk.sitkNearestNeighbor:
+        resampler.SetOutputPixelType(sitk.sitkUInt8)   # 近邻插值用于mask的，保存uint8
+    else:
+        resampler.SetOutputPixelType(sitk.sitkFloat32)  # 线性插值用于PET/CT/MRI之类的，保存float32
+    resampler.SetTransform(sitk.Transform(3, sitk.sitkIdentity))    
+    resampler.SetInterpolator(resamplemethod)
+    itk_img_resampled = resampler.Execute(ori_img)  # 得到重新采样后的图像
+    return itk_img_resampled
 
 # 0001.nii is image file
 Path_of_image = './0001_image.nii'
 Path_of_label = './0001_mask.nii'
 
+# Read Image Data
 data = sitk.ReadImage(Path_of_image )
 array_of_data = sitk.GetArrayFromImage(data)
-data_label = sitk.ReadImage(Path_of_label )
-array_of_label = sitk.GetArrayFromImage(data_label)
-Slice = 140
-Result = reslice(array_of_data[Slice,:,:],[1,0],[0.1,1.1])
+Slice = 100
+# Reslice Part
+# Resliced_image = reslice(array_of_data[Slice,:,:],[1,0],[0.2,1])
+Resliced_image = reslice(array_of_data,[1,0,0],[0.3,1,0],[0,0.1,1])
 
-hhh = nonlinear_filter(array_of_data,3,0.2)
+# filtered5 = nonlinear_filter(array_of_data,5,20,0.2)
+# filtered10 = nonlinear_filter(array_of_data,20,20,0.2)
 
-# im = Image.new( mode = "RGB", size = (200, 200), color = (153, 153, 255))
-# im = Image.frombytes(mode = "RGB", size = (200, 200), data = Result ,decoder_name="raw")
 
-plt.subplot(2, 2, 1)
-plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
-plt.title('Mask')
-plt.subplot(2, 2, 2)
+# --------------------- plt reslice ----------------------
+
+plt.subplot(1, 2, 1)
 plt.imshow(array_of_data[Slice,:,:])
-plt.title('Original image')
-plt.subplot(2, 2, 3)
-plt.imshow(hhh[Slice,:,:])
-plt.subplot(2,2,4)
-plt.imshow(hhh[Slice,:,:] - array_of_data[Slice,:,:])
+plt.subplot(1, 2, 2)
+plt.imshow(Resliced_image[Slice,:,:])
 plt.show()
-print(Result.shape)
+
+
+
+
+
+# --------------------------------------------------
+# plt.subplot(2, 3, 1)
+# plt.imshow(array_of_data[:,Slice,:],cmap='gray')
+# plt.title('Original image')
+# plt.subplot(2, 3, 2)
+# # plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
+# plt.imshow(filtered5[:,Slice,:],cmap='gray')
+
+# plt.subplot(2,3,3)
+# plt.imshow(filtered10[:,Slice,:],cmap='gray')
+# plt.subplot(2,3,5)
+# plt.imshow(array_of_data[:,Slice,:] - filtered5[:,Slice,:],cmap='gray')
+# plt.subplot(2,3,6)
+# plt.imshow(array_of_data[:,Slice,:] - filtered10[:,Slice,:],cmap='gray')
+# plt.show()
+
+
+
+# data_label = sitk.ReadImage(Path_of_label )
+# array_of_label = sitk.GetArrayFromImage(data_label)
+# Result = reslice(array_of_data[Slice,:,:],[1,0],[0.1,1.1])
+
+
+
+# ---------------------random
+# from numpy import random
+# sz = array_of_data.shape
+# # Image_noise = array_of_data + random.standard_normal(sz) * 30
+
+# filtered = nonlinear_filter(array_of_data,5,20,0.2)
+# # ---------------------
+# plt.subplot(2, 2, 1)
+# # plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
+# plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
+# plt.title('Mask')
+
+# plt.subplot(2, 2, 1)
+# plt.imshow(array_of_data[Slice,:,:])
+# plt.title('Original image')
+# plt.subplot(2, 2, 2)
+# # plt.imshow(Image_noise[Slice,:,:])
+# plt.subplot(2, 2, 3)
+# # plt.imshow(np.squeeze(array_of_label[1,Slice,:,:]))
+# plt.imshow(filtered[Slice,:,:])
+
+# plt.subplot(2,2,4)
+# plt.imshow(array_of_data[Slice,:,:] - filtered[Slice,:,:])
+# plt.show()
+
 
 
 # ---------------------test----------------------------
 # PNG_Path = 'R.jpg'
 # IM = img.imread(PNG_Path)
-# IM2 = nonlinear_filter(np.squeeze(IM[:,:,1]),3,0.2,0.2)
+# IM2 = nonlinear_filter(np.squeeze(IM[:,:,1]),10,1000,0.2)
 
-# plt.subplot(2,2,1)
-# plt.imshow(IM[:,:,1])
-# plt.subplot(2,2,2)
-# plt.imshow(IM2)
-# plt.subplot(2,2,3)
-# plt.imshow(np.squeeze(IM[:,:,1])-IM2)
+# # plt.subplot(2,2,1)
+# # plt.imshow(IM[:,:,1])
+# # plt.title('Original Image')
+# # plt.subplot(2,2,2)
+# # plt.imshow(IM2)
+# # plt.title('Filterd Image')
+# # plt.subplot(2,2,3)
+# # plt.imshow(np.squeeze(IM[:,:,1])-IM2)
+# # plt.title('Difference')
+# # plt.show()
+# bin = np.linspace(-50,300,20)
+# A,B = np.histogram(IM,bin)
+# # print('hhh')
+# plt.hist(A)
 # plt.show()
+# # plt.subplot(1,2,1)
+# # plt.hist(IM[:,:,1],bin  )
+# # plt.title("Original")
+# # plt.subplot(1,2,2)
+# # plt.hist(IM2,bin )
+# # plt.title("Filtered")
+# # plt.show()
 # ---------------------test----------------------------
 
 
