@@ -18,65 +18,41 @@ class Image3D :
 class Affinetransform :
     def __init__(self, trans = None):
         
+        length = len(trans)
+
+        if isinstance(trans,(list,float,np.ndarray)) == False:
+            trans = np.array(trans)
+            print('Error Input Vertor Type')
+            return
+
+        self.trans = trans
+        self.trans = np.reshape(self.trans,-1)
         length = len(self.trans)
 
         # judge length of vector
         if (length in [0,6,7,12]) == False:
             print('Error Input Vertor Length')
             return
-        
-        Matrix = np.zeros([4,4])
-        # Rotate part
+
+        # Random affine generation
+        if length == 0:
+            return
 
 
         if length == 6:
-            # [Xangle,Yangle,Zangle,X_T,Y_T,Z_T]
-            x = trans[0]
-            y = trans[1]
-            z = trans[2]
-            R_X = [[1,0,0],[0,np.cos(x),-np.sin(x)],[0,np.sin(x),np.cos(x)]]
-            R_Y = [[np.cos(y),0,np.sin(y)],[0,1,0],[-np.sin(y),0,np.cos(y)]]
-            R_Z = [[np.cos(z),-np.sin(z),0],[np.sin(z),np.cos(z),0],[0,0,1]]
-            A3D = np.dot(R_X,np.dot(R_Y,R_Z))
-            Matrix[0:3,0:3] = A3D
-
-            # Translation Part
-            Matrix[0,3] = trans[3]
-            Matrix[1,3] = trans[4]
-            Matrix[2,3] = trans[5]
-
-            Matrix[3,3] = 1
-            self.trans = Matrix
+            self.trans = self.rigid_transform(trans)
 
         if length == 7:
-            # [Xangle,Yangle,Zangle,X_T,Y_T,Z_T,Scale]
+            self.trans = self.rigid_transform(trans)
 
-            x = trans[0]
-            y = trans[1]
-            z = trans[2]
-            R_X = [[1,0,0],[0,np.cos(x),-np.sin(x)],[0,np.sin(x),np.cos(x)]]
-            R_Y = [[np.cos(y),0,np.sin(y)],[0,1,0],[-np.sin(y),0,np.cos(y)]]
-            R_Z = [[np.cos(z),-np.sin(z),0],[np.sin(z),np.cos(z),0],[0,0,1]]
-            A3D = np.dot(R_X,np.dot(R_Y,R_Z))
-            Matrix[0:3,0:3] = A3D * trans[6]
+        if length == 12:
+            self.trans = self.affine_transform(trans)
 
-
-        
-
-
-
-        self.trans = trans
     def rigid_transform (self, parameter = None):
         
         # judge data type
-        if isinstance(parameter,(list,float,np.ndarray)) == False:
-            parameter = np.array(parameter)
-            print('Error Input Vertor Type')
-            return
 
-        self.parameter = parameter
-        self.parameter = np.reshape(self.parameter,-1)
-        length = len(self.parameter)
+        length = len(parameter)
 
         # judge length of vector
         if (length in [0,6,7,12]) == False:
@@ -95,15 +71,15 @@ class Affinetransform :
             Rx = parameter[0]
             Ry = parameter[1]
             Rz = parameter[2]
-            Tx = parameter[0]
-            Ty = parameter[1]
-            Tz = parameter[2]
+            Tx = parameter[3]
+            Ty = parameter[4]
+            Tz = parameter[5]
 
 
             # Rotate part
             Rotate_Matrix_x =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
-            Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Rx), 0, np.cos(Rx)]])
-            Rotate_Matrix_z =np.array([[np.cos(Rx), -np.sin(Rx), 0], [np.sin(Rx), np.cos(Rx), 0], [0, 0, 1]])
+            Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
+            Rotate_Matrix_z =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
             Rotate_Matrix = Rotate_Matrix_x* Rotate_Matrix_y* Rotate_Matrix_z
             # A3D = np.dot(R_X,np.dot(R_Y,R_Z))
             Homogeneous[0:3,0:3] = Rotate_Matrix
@@ -116,32 +92,53 @@ class Affinetransform :
             
             return Homogeneous
 
+        # Rigid transformation DOF = 7
+        if length == 7:
+            Homogeneous = np.zeros([4,4])
+            # [Xangle,Yangle,Zangle,X_T,Y_T,Z_T,Scale]
+
+            Rx = parameter[0]
+            Ry = parameter[1]
+            Rz = parameter[2]
+            Tx = parameter[3]
+            Ty = parameter[4]
+            Tz = parameter[5]
+            Scale = parameter[6]
 
 
-    def affine_transform (self, parameter = None):
+            # Rotate part
+            Rotate_Matrix_x =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
+            Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
+            Rotate_Matrix_z =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
+            Rotate_Matrix = Rotate_Matrix_x* Rotate_Matrix_y* Rotate_Matrix_z
+            # A3D = np.dot(R_X,np.dot(R_Y,R_Z))
+            Homogeneous[0:3,0:3] = Rotate_Matrix * Scale
+
+            # Translation Part
+            T = [Tx, Ty, Tz]
+            Homogeneous[0:3,3] = T 
+
+            Homogeneous[3,3] = 1
+            
+            return Homogeneous
+
+    def affine_transform (self, par = None):
         
         # judge data type
-        if isinstance(parameter,(list,float,np.ndarray)) == False:
-            parameter = np.array(parameter)
-            print('Error Input Vertor Type')
-            return
+        length = len(par)
 
-        self.parameter = parameter
-        self.parameter = np.reshape(self.parameter,-1)
-        # length = len(self.parameter)
+        Homogeneous = np.zeros([4,4])
 
-        # # judge length of vector
-        # if (length in [0,6,7,12]) == False:
-        #     print('Error Input Vertor Length')
-        #     return
-
-        # Random affine generation
-        if length == 0:
-            return
-
-
-        if length == 7:
-            return
         if length == 12:
-            return
 
+            Homogeneous[0:3,0:3] = [[par[0],par[1],par[2]],[par[3],par[4],par[5]],[par[6],par[7],par[8]]]
+            Homogeneous[3,3] = 1
+
+            return Homogeneous
+
+    def random_transform_generator ():
+
+        Matrix = np.zeros([4,4])
+
+
+        return Matrix
