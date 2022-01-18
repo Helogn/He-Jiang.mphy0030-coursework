@@ -1,9 +1,9 @@
 import numpy as np
-from numpy.lib.nanfunctions import nanprod
+# from numpy.lib.nanfunctions import nanprod
 from skimage.measure import marching_cubes
+from PIL import Image, ImageFilter
+from scipy.ndimage import gaussian_filter
 import matplotlib.pyplot  as plt
-
-data = np.load ('label_train00.npy')
 
 def surface_normals_np(vertex, triangle):
 
@@ -17,7 +17,7 @@ def surface_normals_np(vertex, triangle):
     # calculate triangle normal vector
     for i in range (length_triangle[0]):
 
-        # get number of vertex
+        # get index of vertex from triangle 
         First_point = triangle[i][0]
         Second_point = triangle[i][1]
         Third_point = triangle[i][2]
@@ -79,7 +79,7 @@ def surface_normals_np(vertex, triangle):
 
 
 
-
+data = np.load ('label_train00.npy')
 # get data from marching_cube
 info = marching_cubes(data)
 vertex = info[0]
@@ -97,20 +97,27 @@ for i in range(sz[0]):
     dot_product[i] = np.dot(Vertex_Normal_Vector[i],Vertex_March_cube[i])
 
 
+# Use 3D Gaussian filter to smooth the binary segmentation
+print(np.sum(data))
+B = [0.1,0.2,0.4,0.5,0.6,0.7,0.8]
+for i in (B):
+    Filtered_image = gaussian_filter(data, sigma=i)
+    print('Sum: ' + str(i))
+    print(np.sum(Filtered_image))
+    INF = marching_cubes(Filtered_image)
+    print(INF[2].shape)
 
 
-
-
-
-
-
-
-
-
-# plt.imshow(data[:,36,:])
+# plt.subplot(1,2,1)
+# plt.imshow(data[20,:,:])
+# print(Filtered_image.shape)
+# plt.subplot(1,2,2)
+# plt.imshow(Filtered_image[20,:,:])
 # plt.show()
 
-print('world')
+
+
+
 
 
 
