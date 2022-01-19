@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot  as plt
+from scipy import ndimage
 from scipy.interpolate import RegularGridInterpolator
 
 class Image3D :
@@ -21,10 +22,6 @@ class Image3D :
 
         Coordinate_Matrix = np.array(Coordinate_Matrix)
         Coordinate_Matrix = np.transpose(Coordinate_Matrix)
-        self.Value_Matrix = Coordinate_Matrix.copy()
-        Coordinate_Matrix[3,:] = 1
-        print('max = ' + str(np.max(Coordinate_Matrix,1)))
-        print('min = ' + str(np.min(Coordinate_Matrix,1)))
         self.Coordinate_Matrix = Coordinate_Matrix
 
 
@@ -32,43 +29,7 @@ class Image3D :
 
         self.matrix = affine.trans
         
-        Result = np.dot(self.matrix, self.Coordinate_Matrix)
-        Result[3,:] = self.Value_Matrix[3,:]
-
-        print(' finish Calculating Matrix')
-        sz_Result = Result.shape
-        Max = np.max(Result,1)
-        Min = np.min(Result,1)
-        # ------------------ +- ------------------------
-        Result[0,:] = Result[0,:] - Min[0]
-        Result[1,:] = Result[1,:] - Min[1]
-        Result[2,:] = Result[2,:] - Min[2]
-
-        Max = np.max(Result,1)
-        Min = np.min(Result,1)
-        Range = np.int16(Max)-np.int16(Min)
-
-        self.Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1],dtype='int32')-1000)
-        print(sz_Result[1])
-        for N in range (sz_Result[1]):
-
-            tx = np.int16(np.floor(Result[0,N])-self.matrix[0,3])
-            ty = np.int16(np.floor(Result[1,N])-self.matrix[1,3])
-            tz = np.int16(np.floor(Result[2,N])-self.matrix[2,3])
-            self.Result2[tx,ty,tz] = (Result[3,N])
-
-        # print('finish Transfor')
-
-
-        # interpolation        
-        # x = np.linspace(0,Range[0]-1,Range[0],dtype= 'int16')
-        # y = np.linspace(0,Range[1]-1,Range[1])
-        # z = np.linspace(0,Range[2]-1,Range[2])
-        # xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
-        # my_interpolating_function = RegularGridInterpolator((x, y, z), self.Result2)
-        
-
-
+        self.Result2 = ndimage.affine_transform(self.Array,self.matrix,[0.5,0.5,2])
 
         return self.Result2
 
@@ -139,7 +100,7 @@ class Affinetransform :
             Rotate_Matrix_x =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
             Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
             Rotate_Matrix_z =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
-            Rotate_Matrix = np.dot(Rotate_Matrix_x,np.dot(Rotate_Matrix_y, Rotate_Matrix_z))
+            Rotate_Matrix = Rotate_Matrix_x* Rotate_Matrix_y* Rotate_Matrix_z
             # A3D = np.dot(R_X,np.dot(R_Y,R_Z))
             Homogeneous[0:3,0:3] = Rotate_Matrix
 
@@ -169,7 +130,7 @@ class Affinetransform :
             Rotate_Matrix_x =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
             Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
             Rotate_Matrix_z =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
-            Rotate_Matrix = np.dot(Rotate_Matrix_x,np.dot(Rotate_Matrix_y, Rotate_Matrix_z))
+            Rotate_Matrix = Rotate_Matrix_x* Rotate_Matrix_y* Rotate_Matrix_z
             # A3D = np.dot(R_X,np.dot(R_Y,R_Z))
             Homogeneous[0:3,0:3] = Rotate_Matrix * Scale
 
@@ -212,20 +173,13 @@ class Affinetransform :
 
 Image = np.load('image_train00.npy')
 obj = Image3D(Image)
-# Transformation = Affinetransform([30,0,0,2,0,0,2])
-Transformation = Affinetransform()
+Transformation = Affinetransform([0,45,0,0,0,0,0])
 result = obj.warp(Transformation)
 
-print(result.shape)
-plt.subplot(2, 2, 1)
-plt.imshow(Image[10,:,:])
-
-plt.subplot(2, 2, 2)
-plt.imshow(result[50,:,:])
-# plt.xlabel('x')
-# plt.subplot(2, 2, 3)
-# plt.imshow(Image[:,50,:])
-# plt.subplot(2, 2, 4)
-# plt.imshow(result[:,50,:])
-
+plt.subplot(1, 2, 1)
+plt.imshow(Image[20,:,:])
+plt.title('Distance_transform_np')
+plt.subplot(1, 2, 2)
+plt.imshow(result[20,:,:])
+plt.title('Distance_transform_edt')
 plt.show()
