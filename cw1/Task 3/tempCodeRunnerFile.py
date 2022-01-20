@@ -1,3 +1,18 @@
-
-            # ty = np.int16((Result[1,N])-self.matrix[1,3]-Min[1])
-            # tz = np.int16((Result[2,N])-self.matrix[2,3]-Min[2])
+from scipy.interpolate import LinearNDInterpolator
+import matplotlib.pyplot as plt
+import numpy as np
+rng = np.random.default_rng()
+x = rng.random(10) - 0.5
+y = rng.random(10) - 0.5
+z = np.hypot(x, y)
+X = np.linspace(min(x), max(x))
+Y = np.linspace(min(y), max(y))
+X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+interp = LinearNDInterpolator(list(zip(x, y)), z)
+Z = interp(X, Y)
+plt.pcolormesh(X, Y, Z, shading='auto')
+plt.plot(x, y, "ok", label="input point")
+plt.legend()
+plt.colorbar()
+plt.axis("equal")
+plt.show()

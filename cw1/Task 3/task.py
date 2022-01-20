@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot  as plt
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import LinearNDInterpolator
 
 class Image3D :
 
@@ -18,7 +18,6 @@ class Image3D :
                 for k in range (sz[1]):
                     Coordinate_Matrix.append([i,j,k,Array[i,j,k]])
         print(' finish Creating Matrix')
-
         Coordinate_Matrix = np.array(Coordinate_Matrix)
         Coordinate_Matrix = np.transpose(Coordinate_Matrix)
         self.Value_Matrix = Coordinate_Matrix.copy()
@@ -33,6 +32,7 @@ class Image3D :
         self.matrix = affine.trans
         
         Result = np.dot(self.matrix, self.Coordinate_Matrix)
+        # Value_result = np.transpose(Result)
         Result[3,:] = self.Value_Matrix[3,:]
 
         print(' finish Calculating Matrix')
@@ -47,7 +47,7 @@ class Image3D :
         Max = np.max(Result,1)
         Min = np.min(Result,1)
         Range = np.int16(Max)-np.int16(Min)
-
+        # -------------------------------------------
         self.Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1],dtype='int32')-1000)
         print(sz_Result[1])
         for N in range (sz_Result[1]):
@@ -61,11 +61,12 @@ class Image3D :
 
 
         # interpolation        
-        # x = np.linspace(0,Range[0]-1,Range[0],dtype= 'int16')
-        # y = np.linspace(0,Range[1]-1,Range[1])
-        # z = np.linspace(0,Range[2]-1,Range[2])
-        # xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
-        # my_interpolating_function = RegularGridInterpolator((x, y, z), self.Result2)
+        x = Result[0,:]
+        y = Result[1,:]
+        z = Result[2,:]
+        xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
+        my_interpolating_function = LinearNDInterpolator(np.transpose(Result[0:3,:]), np.transpose(Result[3,:]))
+        # print(my_interpolating_function([1,1,1]))
         
 
 
