@@ -99,7 +99,7 @@ for i in range(sz[0]):
 
 # Use 3D Gaussian filter to smooth the binary segmentation
 print(np.sum(data))
-B = [0.1,0.2,0.4,0.5,0.6,0.7,0.8]
+B = [0.1,0.15,0.2,0.25,0.4,0.5,0.6,0.7,0.8,2,3,4,5]
 for i in (B):
     Filtered_image = gaussian_filter(data, sigma=i)
     print('Sum: ' + str(i))
@@ -108,12 +108,12 @@ for i in (B):
     print(INF[2].shape)
 
 
-# plt.subplot(1,2,1)
-# plt.imshow(data[20,:,:])
-# print(Filtered_image.shape)
-# plt.subplot(1,2,2)
-# plt.imshow(Filtered_image[20,:,:])
-# plt.show()
+plt.subplot(1,2,1)
+plt.imshow(data[20,:,:])
+print(Filtered_image.shape)
+plt.subplot(1,2,2)
+plt.imshow(Filtered_image[20,:,:])
+plt.show()
 
 
 

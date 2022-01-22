@@ -273,16 +273,22 @@ Slice = 100
 # Resliced_image = reslice(array_of_data[Slice,:,:],[1,0],[0.2,1])
 Resliced_image = reslice(array_of_data,[1,0,0],[0.3,1,0],[0,0.1,1])
 
-# filtered5 = nonlinear_filter(array_of_data,5,20,0.2)
-# filtered10 = nonlinear_filter(array_of_data,20,20,0.2)
+filtered5 = nonlinear_filter(Resliced_image,5,20,0.2)
+filtered10 = nonlinear_filter(Resliced_image,20,20,0.2)
 
 
 # --------------------- plt reslice ----------------------
 
+# plt.subplot(1, 2, 1)
+# plt.imshow(array_of_data[Slice,:,:])
+# plt.subplot(1, 2, 2)
+# plt.imshow(Resliced_image[Slice,:,:])
+# plt.show()
+# ---------------------- plt nonlinear ---------------
 plt.subplot(1, 2, 1)
-plt.imshow(array_of_data[Slice,:,:])
+plt.imshow(filtered5[Slice,:,:])
 plt.subplot(1, 2, 2)
-plt.imshow(Resliced_image[Slice,:,:])
+plt.imshow(filtered10[Slice,:,:])
 plt.show()
 
 

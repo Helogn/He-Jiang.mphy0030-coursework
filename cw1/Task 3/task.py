@@ -1,4 +1,5 @@
 from cmath import nan
+from inspect import Traceback
 import numpy as np
 import matplotlib.pyplot  as plt
 from scipy.interpolate import griddata,LinearNDInterpolator
@@ -194,20 +195,18 @@ class Affinetransform :
         print('parameter of matrix = \n' + str(self.trans))
 
 
-    def rigid_transform (self, parameter = None):
+    def rigid_transform (self, parameter ):
         
         # judge data type
 
         length = len(parameter)
 
         # judge length of vector
-        if (length in [0,6,7,12]) == False:
+        if (length in [6,7,12]) == False:
             print('Error Input Vertor Length')
             return
 
         # Random affine generation
-        if length == 0:
-            return
 
         # Rigid transformation DOF = 6
         if length == 6:
@@ -268,7 +267,7 @@ class Affinetransform :
             
             return Homogeneous
 
-    def affine_transform (self, par = None):
+    def affine_transform (self, par):
         
         # judge data type
         length = len(par)
@@ -278,11 +277,13 @@ class Affinetransform :
         if length == 12:
 
             Homogeneous[0:3,0:3] = [[par[0],par[1],par[2]],[par[3],par[4],par[5]],[par[6],par[7],par[8]]]
+            Homogeneous[0:3,3] = [par[9],par[10],par[11]]
             Homogeneous[3,3] = 1
 
             return Homogeneous
 
-    def random_transform_generator (self):
+    def random_transform_generator (self,strength = 1):
+        # strength from 1 to higher value ->  small change to super change
 
         Matrix = np.zeros([4,4])
         n, m = 3, 4
@@ -290,9 +291,22 @@ class Affinetransform :
         H = np.random.rand(n, m)
         u, s, vh = np.linalg.svd(H, full_matrices=False)
         u = np.round(u,4)
-        # Matrix = u @ vh
-        Matrix[0:3,0:3] = u
+        
+        # define Homo Matrix
+        Matrix[0:3,0:3] = u 
+        Matrix[0:3,3] = H[:,0] 
         Matrix[3,3] = 1
+
+        # define strength parameter
+        # change translation strength
+        Matrix[0:3,3] = H[:,0] * (strength + 1)
+
+        # add Shear influence
+        Matrix[0,1:3] = Matrix[0,1:3] * strength
+        Matrix[1,0] = Matrix[1,0] * strength
+        Matrix[2,0:2] = Matrix[2,0:2] * strength
+
+
 
         return Matrix
 
@@ -301,21 +315,24 @@ Image = np.load('image_train00.npy')
 obj = Image3D(Image)
 # Transformation = Affinetransform([0,10,0,2,0,0,2])
 Transformation = Affinetransform()
+print(Transformation.random_transform_generator(3))
+# print(Transformation.affine_transform())
 # Transformation = Affinetransform()
 result = obj.warp(Transformation)
 
-print(result.shape)
+# print(result.shape)
 plt.subplot(2, 2, 1)
 plt.imshow(Image[10,:,:])
-
+plt.hot()
 plt.subplot(2, 2, 2)
 plt.imshow(result[10,:,:])
 # plt.savefig('test.png')
 
-# plt.xlabel('x')
 plt.subplot(2, 2, 3)
-plt.imshow(result[:,:,50])
+plt.imshow(result[15,:,:])
+
 plt.subplot(2, 2, 4)
-plt.imshow(result[:,50,:])
+plt.imshow(result[20,:,:])
+
 plt.show()
 

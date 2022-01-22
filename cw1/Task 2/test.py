@@ -1,12 +1,21 @@
 import numpy as np
 
-a = np.ones([2,3])
-b = [3,3,3]
-c = [2,2]
+from scipy.ndimage import gaussian_filter
+a = np.arange(2500, step=1).reshape((50,50))
 
-d = [[[1,1],[2,3]],[[5,7],[8,10]]]
-# d = np.array(d)
-# f = np.mean(d,axis =2)
-# print(d)
-# print('result \n' + str(f))
-print(len(d))
+
+from scipy import misc
+import matplotlib.pyplot as plt
+fig = plt.figure()
+plt.gray()  # show the filtered result in grayscale
+ax1 = fig.add_subplot(221)  # left side
+ax2 = fig.add_subplot(222)  # right side
+ax3 = fig.add_subplot(223)  # right side
+ax4 = fig.add_subplot(224)  # right side
+ascent = misc.ascent()
+result = gaussian_filter(ascent, sigma=5)
+ax1.imshow(ascent)
+ax2.imshow(gaussian_filter(ascent, sigma=0.1))
+ax3.imshow(gaussian_filter(ascent, sigma=0.5))
+ax4.imshow(gaussian_filter(ascent, sigma=1.0))
+plt.show()
