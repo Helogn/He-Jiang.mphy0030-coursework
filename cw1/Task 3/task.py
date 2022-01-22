@@ -1,6 +1,6 @@
 import numpy as np
 import matplotlib.pyplot  as plt
-from scipy.interpolate import LinearNDInterpolator
+from scipy.interpolate import griddata,LinearNDInterpolator
 
 class Image3D :
 
@@ -49,24 +49,38 @@ class Image3D :
         Range = np.int16(Max)-np.int16(Min)
         # -------------------------------------------
         self.Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1],dtype='int32')-1000)
-        print(sz_Result[1])
-        for N in range (sz_Result[1]):
+        # print(sz_Result[1])
+        # for N in range (sz_Result[1]):
 
-            tx = np.int16(np.floor(Result[0,N])-self.matrix[0,3])
-            ty = np.int16(np.floor(Result[1,N])-self.matrix[1,3])
-            tz = np.int16(np.floor(Result[2,N])-self.matrix[2,3])
-            self.Result2[tx,ty,tz] = (Result[3,N])
+        #     tx = np.int16(np.floor(Result[0,N])-self.matrix[0,3])
+        #     ty = np.int16(np.floor(Result[1,N])-self.matrix[1,3])
+        #     tz = np.int16(np.floor(Result[2,N])-self.matrix[2,3])
+        #     self.Result2[tx,ty,tz] = (Result[3,N])
 
         # print('finish Transfor')
 
+        #long running
+        #do something other
+
 
         # interpolation        
-        x = Result[0,:]
-        y = Result[1,:]
-        z = Result[2,:]
-        xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
-        my_interpolating_function = LinearNDInterpolator(np.transpose(Result[0:3,:]), np.transpose(Result[3,:]))
-        # print(my_interpolating_function([1,1,1]))
+        x = np.linspace(0,Range[0],Range[0]+1)
+        y = np.linspace(0,Range[1],Range[1]+1)
+        z = np.linspace(0,Range[2],Range[2]+1)
+        # xg, yg, zg  = np.meshgrid(x, y,z, indexing='ij', sparse=True)
+        xg, yg, zg  = np.meshgrid(x, y,z)
+        # self.Result2 = griddata(np.transpose(Result[0,:]), Result[3,:], (xg,yg ), method='linear')
+        # X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+        interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
+        
+
+        print(' finish Interpolation')
+
+        self.Result2 = interp(xg, yg, zg)
+        print(self.Result2.shape)
+
+        
+
         
 
 
@@ -214,7 +228,8 @@ class Affinetransform :
 Image = np.load('image_train00.npy')
 obj = Image3D(Image)
 # Transformation = Affinetransform([30,0,0,2,0,0,2])
-Transformation = Affinetransform()
+Transformation = Affinetransform([0,0,0,0,0,0,2])
+# Transformation = Affinetransform()
 result = obj.warp(Transformation)
 
 print(result.shape)
@@ -222,11 +237,11 @@ plt.subplot(2, 2, 1)
 plt.imshow(Image[10,:,:])
 
 plt.subplot(2, 2, 2)
-plt.imshow(result[50,:,:])
+plt.imshow(result[20,:,:])
+plt.savefig('test.png')
 # plt.xlabel('x')
 # plt.subplot(2, 2, 3)
 # plt.imshow(Image[:,50,:])
 # plt.subplot(2, 2, 4)
 # plt.imshow(result[:,50,:])
 
-plt.show()
