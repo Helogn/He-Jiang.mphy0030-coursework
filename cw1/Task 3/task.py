@@ -1,6 +1,8 @@
+from cmath import nan
 import numpy as np
 import matplotlib.pyplot  as plt
 from scipy.interpolate import griddata,LinearNDInterpolator
+from PIL import ImageFilter, Image
 
 class Image3D :
 
@@ -11,6 +13,7 @@ class Image3D :
         self.dims = dims
         
         sz = Array.shape
+        self.sz = sz
         Coordinate_Matrix = []
         
         for i in range (sz[0]):
@@ -22,8 +25,8 @@ class Image3D :
         Coordinate_Matrix = np.transpose(Coordinate_Matrix)
         self.Value_Matrix = Coordinate_Matrix.copy()
         Coordinate_Matrix[3,:] = 1
-        print('max = ' + str(np.max(Coordinate_Matrix,1)))
-        print('min = ' + str(np.min(Coordinate_Matrix,1)))
+        # print('max = ' + str(np.max(Coordinate_Matrix,1)))
+        # print('min = ' + str(np.min(Coordinate_Matrix,1)))
         self.Coordinate_Matrix = Coordinate_Matrix
 
 
@@ -48,7 +51,7 @@ class Image3D :
         Min = np.min(Result,1)
         Range = np.int16(Max)-np.int16(Min)
         # -------------------------------------------
-        self.Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1],dtype='int32')-1000)
+        # self.Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1],dtype='int32')-1000)
         # print(sz_Result[1])
         # for N in range (sz_Result[1]):
 
@@ -62,30 +65,97 @@ class Image3D :
         #long running
         #do something other
 
-
-        # interpolation        
-        x = np.linspace(0,Range[0],Range[0]+1)
-        y = np.linspace(0,Range[1],Range[1]+1)
-        z = np.linspace(0,Range[2],Range[2]+1)
-        # xg, yg, zg  = np.meshgrid(x, y,z, indexing='ij', sparse=True)
-        xg, yg, zg  = np.meshgrid(x, y,z)
-        # self.Result2 = griddata(np.transpose(Result[0,:]), Result[3,:], (xg,yg ), method='linear')
-        # X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
-        interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
+        # --------------------------------------------------------------------------
+        # # interpolation        
+        # x = np.linspace(0,Range[0],Range[0]+1)
+        # y = np.linspace(0,Range[1],Range[1]+1)
+        # z = np.linspace(0,Range[2],Range[2]+1)
+        # # xg, yg, zg  = np.meshgrid(x, y,z, indexing='ij', sparse=True)
+        # xg, yg, zg  = np.meshgrid(x, y,z)
+        # # self.Result2 = griddata(np.transpose(Result[0,:]), Result[3,:], (xg,yg ), method='linear')
+        # # X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+        # interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
         
+        # print(' finish Interpolation')
 
-        print(' finish Interpolation')
+        # self.Result2 = interp(xg, yg, zg)
+        # print(self.Result2.shape)
+        # ----------------------------------------------------------------------------
 
-        self.Result2 = interp(xg, yg, zg)
-        print(self.Result2.shape)
-
+        # ------------------------------------------ test 2-------------------------
         
+        # x = Result[0,:].reshape(self.sz)
+        # y = Result[1,:].reshape(self.sz)
+        # z = Result[2,:].reshape(self.sz)
+        # v = Result[3,:].reshape(self.sz)
+        # x = np.linspace(0,Range[0],Range[0]+1)
+        # y = np.linspace(0,Range[1],Range[1]+1)
+        # z = np.linspace(0,Range[2],Range[2]+1)
+        # gx,gy,gz = np.mgrid[0:Range[0]:Range[0]+1j,0:Range[1]:Range[1]+1j,0:Range[2]:Range[2]+1j]
+        # # interp = griddata(np.array([np.reshape(x,-1),np.reshape(y,-1),np.reshape(z,-1)]).T, np.reshape(v,-1))
+        # interp = griddata(np.transpose (Result[0:3,:]), np.transpose(Result[3,:]) ,(gx,gy,gz) ,method='linear')
+        # print(x.shape)
 
+        # ---------------------------- test 3 -------------------------------------
+        # x = Result[0,:].reshape(self.sz)
+        # y = Result[1,:].reshape(self.sz)
+        # z = Result[2,:].reshape(self.sz)
+        # v = Result[3,:].reshape(self.sz)
+
+        # Output_x = x[7,:,:].reshape(-1); x_max = np.max(Output_x); x_min = np.min(Output_x)
+        # Output_y = y[7,:,:].reshape(-1); y_max = np.max(Output_y); y_min = np.min(Output_y)
+        # # Output_z = z[7,:,:].reshape(-1); z_max = np.max(Output_z); z_min = np.min(Output_z)      
+        # Output_v = v[7,:,:].reshape(-1)     
+        # x = np.linspace(x_min,(x_max),np.int16(x_max-x_min)+1)
+        # y = np.linspace((y_min),(y_max),np.int16(y_max-y_min)+1)
+        # # z = np.linspace((z_min),(z_max),np.int16(z_max-z_min)+1)
+        # # [X, Y ,Z] = np.meshgrid(x,y,z)
+        # X, Y  = np.meshgrid(x,y)
+        # # pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1),np.reshape(Z ,-1)]).T
+        # pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1)]).T
+        # A = np.array([Output_x,Output_y]).T
+        # B = np.squeeze(np.array([X,Y])).T
+        # interp = griddata(A, (Output_v) ,(X,Y) ,method='linear')
+        # --------------------- test4 ----------------------
+
+        x = Result[0,:].reshape(self.sz)
+        y = Result[1,:].reshape(self.sz)
+        z = Result[2,:].reshape(self.sz)
+        v = Result[3,:].reshape(self.sz)
+        x_max = np.max(Result[0,:]); x_min = np.min(Result[0,:])
+        y_max = np.max(Result[1,:]); y_min = np.min(Result[1,:])
+        z_max = np.max(Result[2,:]); z_min = np.min(Result[2,:])
         
+        x1 = np.linspace(x_min,(x_max),np.int16(x_max-x_min)+1)
+        y1 = np.linspace((y_min),(y_max),np.int16(y_max-y_min)+1)
+        X, Y  = np.meshgrid(x1,y1)
+        print(len(x1))
+        sz = x.shape
+        output = np.zeros(np.int16([sz[0],len(y1),len(x1)]))
+        for A in range(sz[0]):
+            Output_x = x[A,:,:].reshape(-1)
+            Output_y = y[A,:,:].reshape(-1)
+            Output_v = v[A,:,:].reshape(-1)     
+            # z = np.linspace((z_min),(z_max),np.int16(z_max-z_min)+1)
+            # [X, Y ,Z] = np.meshgrid(x,y,z)
+            
+            # pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1),np.reshape(Z ,-1)]).T
+            pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1)]).T
+            point = np.array([Output_x,Output_y]).T
+            B = np.squeeze(np.array([X,Y])).T
+            interp = griddata(point, (Output_v) ,(X,Y) ,method='linear')
+            # print(interp.shape)
+            output[A,:,:] = np.array(interp) # Z Y X
+            # print('finish one slice')
+        output[np.isnan(output)] = 0
+        for A in range(1,sz[0]-1):
+            output[A,:,:] = output[A-1,:,:]/6 + output[A,:,:]/6 + output[A,:,:] * 4 /6
+
+        # 
 
 
 
-        return self.Result2
+        return output
 
 
 class Affinetransform :
@@ -120,6 +190,8 @@ class Affinetransform :
 
         if length == 12:
             self.trans = self.affine_transform(trans)
+
+        print('parameter of matrix = \n' + str(self.trans))
 
 
     def rigid_transform (self, parameter = None):
@@ -227,8 +299,8 @@ class Affinetransform :
 
 Image = np.load('image_train00.npy')
 obj = Image3D(Image)
-# Transformation = Affinetransform([30,0,0,2,0,0,2])
-Transformation = Affinetransform([0,0,0,0,0,0,2])
+# Transformation = Affinetransform([0,10,0,2,0,0,2])
+Transformation = Affinetransform()
 # Transformation = Affinetransform()
 result = obj.warp(Transformation)
 
@@ -237,11 +309,13 @@ plt.subplot(2, 2, 1)
 plt.imshow(Image[10,:,:])
 
 plt.subplot(2, 2, 2)
-plt.imshow(result[20,:,:])
-plt.savefig('test.png')
+plt.imshow(result[10,:,:])
+# plt.savefig('test.png')
+
 # plt.xlabel('x')
-# plt.subplot(2, 2, 3)
-# plt.imshow(Image[:,50,:])
-# plt.subplot(2, 2, 4)
-# plt.imshow(result[:,50,:])
+plt.subplot(2, 2, 3)
+plt.imshow(result[:,:,50])
+plt.subplot(2, 2, 4)
+plt.imshow(result[:,50,:])
+plt.show()
 

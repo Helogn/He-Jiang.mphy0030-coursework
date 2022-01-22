@@ -1,3 +1,4 @@
+from cmath import nan
 import numpy as np
 from scipy.interpolate import LinearNDInterpolator
 import matplotlib.pyplot as plt
@@ -26,28 +27,9 @@ import matplotlib.pyplot as plt
 # xg, yg  = np.meshgrid(x, y, indexing='ij', sparse=True)
 # self.Result2 = griddata(np.transpose(Result[0:2,:]), Result[3,:], (xg, yg ), method='linear')
 # print(' finish Interpolation')
-from scipy.interpolate import LinearNDInterpolator
-import matplotlib.pyplot as plt
-rng = np.random.default_rng()
-x = rng.random(10) - 0.5
-y = rng.random(10) - 0.5
-z = np.hypot(x, y)
-X = np.linspace(min(x), max(x))
-Y = np.linspace(min(y), max(y))
-X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
-interp = LinearNDInterpolator(list(zip(x, y)), z)
-Z = interp(X, Y)
-plt.pcolormesh(X, Y, Z, shading='auto')
-plt.plot(x, y, "ok", label="input point")
-plt.legend()
-plt.colorbar()
-plt.axis("equal")
-plt.show()
-
-# [x,y,z,v] [4,n]
-# for x in range(Range[0]):
-#     for y in range(Range[1]):
-
+a = nan
+b = a + 1
+print(b)
 
 
 
