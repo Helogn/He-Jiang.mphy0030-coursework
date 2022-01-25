@@ -9,151 +9,157 @@ import numpy as np
 # from PIL import Image
 import PIL
 
-def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
 
-    sz = Ori_Image.shape
+# -------------------reslice --------------------------- to line 158
+# ------------------------------------------------------
+# def reslice (Ori_Image,x,y,z = [0,0,1]):
+
+#     sz = Ori_Image.shape
 
 
-    # ----------------for 2D image----------------------
-    if len(sz) == 2:
+#     # ----------------for 2D image----------------------
+#     if len(sz) == 2:
 
-        # mesh_x = (np.linspace(1, sz[0], sz[0],dtype = "int16" ) -1)
-        # mesh_y = (np.linspace(1, sz[1], sz[1],dtype = "int16" ) -1)
-        # # mesh_z = np.linspace(0,1,sz(2))
-        # xv, yv = np.meshgrid(mesh_x, mesh_y)
-        # Data_Matrix = np.array([mesh_x,mesh_x])
+#         # mesh_x = (np.linspace(1, sz[0], sz[0],dtype = "int16" ) -1)
+#         # mesh_y = (np.linspace(1, sz[1], sz[1],dtype = "int16" ) -1)
+#         # # mesh_z = np.linspace(0,1,sz(2))
+#         # xv, yv = np.meshgrid(mesh_x, mesh_y)
+#         # Data_Matrix = np.array([mesh_x,mesh_x])
 
-        # Trans_matrix = [x,y]
-        # # Trans_matrix = np.transpose(Trans_matrix)
+#         # Trans_matrix = [x,y]
+#         # # Trans_matrix = np.transpose(Trans_matrix)
         
-        # result = Trans_matrix @ Data_Matrix
+#         # result = Trans_matrix @ Data_Matrix
 
 
-        # --------------------------------------------
+#         # --------------------------------------------
         
-        # Normalization
-        x1 = np.array(x)
-        y1 = np.array(y)
-        length_x = np.linalg.norm(x1)
-        length_y = np.linalg.norm(y1)
+#         # Normalization
+#         x1 = np.array(x)
+#         y1 = np.array(y)
+#         length_x = np.linalg.norm(x1)
+#         length_y = np.linalg.norm(y1)
 
-        x = (x / length_x).tolist()
-        y = (y / length_y).tolist()
+#         x = (x / length_x).tolist()
+#         y = (y / length_y).tolist()
 
-        Coordinate_Matrix = []
+#         Coordinate_Matrix = []
         
-        for i in range (sz[0]):
-            for j in range (sz[1]):
-                Coordinate_Matrix.append([i,j,Ori_Image[i,j]])
+#         for i in range (sz[0]):
+#             for j in range (sz[1]):
+#                 Coordinate_Matrix.append([i,j,Ori_Image[i,j]])
 
-        if len(x) == 2:
-            x.append(0)
-            y.append(0)
+#         if len(x) == 2:
+#             x.append(0)
+#             y.append(0)
 
-        Trans_matrix = np.array([x,y,[0,0,1]])
-        Coordinate_Matrix = np.array(Coordinate_Matrix)
-        Coordinate_Matrix = np.transpose(Coordinate_Matrix)
+#         Trans_matrix = np.array([x,y,[0,0,1]])
+#         Coordinate_Matrix = np.array(Coordinate_Matrix)
+#         Coordinate_Matrix = np.transpose(Coordinate_Matrix)
 
-        # Transform matrix * Coordinate 
-        Result = np.dot(Trans_matrix, Coordinate_Matrix)
-        sz_Result = Result.shape
-        print("max Result" + str(np.max(Result,1)))
-        Range = np.int16(np.max(Result,1)-np.min(Result,1))
+#         # Transform matrix * Coordinate 
+#         Result = np.dot(Trans_matrix, Coordinate_Matrix)
+#         sz_Result = Result.shape
+#         print("max Result" + str(np.max(Result,1)))
+#         Range = np.int16(np.max(Result,1)-np.min(Result,1))
 
-        Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1])-1000)
-        print(sz_Result[1])
-        for N in range (sz_Result[1]):
-            # print([Result[0,N],Result[1,N]])
-            tx = np.int16(Result[0,N])
-            ty = np.int16(Result[1,N])
-            Result2[tx,ty] = Result[2,N]
-            # print("point: "+str([Result[0,i],Result[1,i]]) + " value " + str(Result[2,i]))
+#         Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1])-1000)
+#         print(Range)
+#         for N in range (sz_Result[1]):
+#             # print([Result[0,N],Result[1,N]])
+#             tx = np.int16(Result[0,N])
+#             ty = np.int16(Result[1,N])
+#             Result2[tx,ty] = Result[2,N]
+#             # print("point: "+str([Result[0,i],Result[1,i]]) + " value " + str(Result[2,i]))
 
-        # Result3 = Result2.tolist()
-        im = PIL.Image.fromarray(Result2)
-        # Test_im = im.resize( size = [sz[1],sz[0]], resample=2, box=None, reducing_gap=None)
-        sz1 = [sz[1],sz[0]]
-        Test_im = im.resize( size = sz1, resample=2, box=None, reducing_gap=None)
-        # Test_im.show()
-        Result4 = np.array(Test_im)
+#         # Result3 = Result2.tolist()
+#         im = PIL.Image.fromarray(Result2)
+#         # Test_im = im.resize( size = [sz[1],sz[0]], resample=2, box=None, reducing_gap=None)
+#         sz1 = [sz[1],sz[0]]
+#         Test_im = im.resize( size = sz1, resample=2, box=None, reducing_gap=None)
+#         # Test_im.show()
+#         Result4 = np.array(Test_im)
 
-        return Result4
+#         return Result4
 
 
-    if len(sz) == 3:
+#     if len(sz) == 3:
 
-        x1 = np.array(x)
-        y1 = np.array(y)
-        z1 = np.array(z)
-        length_x = np.linalg.norm(x1)
-        length_y = np.linalg.norm(y1)
-        length_z = np.linalg.norm(z1)
+#         x1 = np.array(x)
+#         y1 = np.array(y)
+#         z1 = np.array(z)
+#         length_x = np.linalg.norm(x1)
+#         length_y = np.linalg.norm(y1)
+#         length_z = np.linalg.norm(z1)
 
-        x = (x / length_x).tolist()
-        y = (y / length_y).tolist()
-        z = (z / length_z).tolist()
+#         x = (x / length_x).tolist()
+#         y = (y / length_y).tolist()
+#         z = (z / length_z).tolist()
 
-        Coordinate_Matrix = []
+#         Coordinate_Matrix = []
         
-        for i in range (sz[0]):
-            for j in range (sz[1]):
-                for k in range (sz[1]):
-                    Coordinate_Matrix.append([i,j,k,Ori_Image[i,j,k]])
-        print(' finish Creating Matrix')
-        if len(x) == 3:
-            x.append(0)
-            y.append(0)
-            z.append(0)
+#         for i in range (sz[0]):
+#             for j in range (sz[1]):
+#                 for k in range (sz[1]):
+#                     Coordinate_Matrix.append([i,j,k,Ori_Image[i,j,k]])
+#         print(' finish Creating Matrix')
+#         if len(x) == 3:
+#             x.append(0)
+#             y.append(0)
+#             z.append(0)
 
-        Trans_matrix = np.array([x,y,z,[0,0,0,1]])
-        Coordinate_Matrix = np.array(Coordinate_Matrix)
-        Coordinate_Matrix = np.transpose(Coordinate_Matrix)
+#         Trans_matrix = np.array([x,y,z,[0,0,0,1]])
+#         Coordinate_Matrix = np.array(Coordinate_Matrix)
+#         Coordinate_Matrix = np.transpose(Coordinate_Matrix)
 
-        Result = np.dot(Trans_matrix, Coordinate_Matrix)
+#         Result = np.dot(Trans_matrix, Coordinate_Matrix)
 
-        print(' finish Calculating Matrix')
-        sz_Result = Result.shape
-        Range = np.int16(np.max(Result,1)-np.min(Result,1))
+#         print(' finish Calculating Matrix')
+#         sz_Result = Result.shape
+#         Range = np.int16(np.max(Result,1)-np.min(Result,1))
 
-        Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1])-1000)
-        print(sz_Result[1])
-        for N in range (sz_Result[1]):
-            # print([Result[0,N],Result[1,N]])
-            tx = np.int16(Result[0,N])
-            ty = np.int16(Result[1,N])
-            tz = np.int16(Result[2,N])
-            Result2[tx,ty,tz] = Result[3,N]
-            # print("point: "+str([Result[0,i],Result[1,i]]) + " value " + str(Result[2,i]))
+#         Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1])-1000)
+#         print(sz_Result[1])
+#         for N in range (sz_Result[1]):
+#             # print([Result[0,N],Result[1,N]])
+#             tx = np.int16(Result[0,N])
+#             ty = np.int16(Result[1,N])
+#             tz = np.int16(Result[2,N])
+#             Result2[tx,ty,tz] = Result[3,N]
+#             # print("point: "+str([Result[0,i],Result[1,i]]) + " value " + str(Result[2,i]))
 
 
-# -------------- calculate slowly ------------------------------
-        # X = np.linspace(min(Result[0,:]), max(Result[0,:]))
-        # Y = np.linspace(min(Result[1,:]), max(Result[1,:]))
-        # Z = np.linspace(min(Result[2,:]), max(Result[2,:]))
-        # print(' finish linspace')
-        # X, Y, Z = np.meshgrid(X, Y, Z)  # 2D grid for interpolation
+# # -------------- calculate slowly ------------------------------
+#         # X = np.linspace(min(Result[0,:]), max(Result[0,:]))
+#         # Y = np.linspace(min(Result[1,:]), max(Result[1,:]))
+#         # Z = np.linspace(min(Result[2,:]), max(Result[2,:]))
+#         # print(' finish linspace')
+#         # X, Y, Z = np.meshgrid(X, Y, Z)  # 2D grid for interpolation
         
-        # interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
-        # print(' finish Linear')
-        # V = interp(X, Y, Z)
-        # print(' finish interpolating')
-# ----------------------------------------------------------------
-# -------------- RBF ---------------------------------------------
-# rng = np.random.default_rng()
+#         # interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
+#         # print(' finish Linear')
+#         # V = interp(X, Y, Z)
+#         # print(' finish interpolating')
+# # ----------------------------------------------------------------
+# # -------------- RBF ---------------------------------------------
+# # rng = np.random.default_rng()
 
 
-# -------------------------------------------------------
+# # -------------------------------------------------------
 
-        return Result2
+#         return Result2
 
 
-    else :
-        return
+#     else :
+#         return
 
-    
+# ----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
+# ----------------------------------------------------------------------------------
 
 
 def nonlinear_filter(Image,iteration = 5, K = 30, L = 0.2):
+
 
     # Image : input Image
     # iteration: Times of Iteration
@@ -270,11 +276,11 @@ data = sitk.ReadImage(Path_of_image )
 array_of_data = sitk.GetArrayFromImage(data)
 Slice = 100
 # Reslice Part
-# Resliced_image = reslice(array_of_data[Slice,:,:],[1,0],[0.2,1])
-Resliced_image = reslice(array_of_data,[1,0,0],[0.3,1,0],[0,0.1,1])
+Resliced_image = reslice(array_of_data[Slice,:,:],x = [0,2], y = [2,0])
+# Resliced_image = reslice(array_of_data,[1,0,0],[0.3,1,0],[0,0,1])
 
-filtered5 = nonlinear_filter(Resliced_image,5,20,0.2)
-filtered10 = nonlinear_filter(Resliced_image,20,20,0.2)
+# filtered5 = nonlinear_filter(Resliced_image,5,20,0.2)
+# filtered10 = nonlinear_filter(Resliced_image,20,20,0.2)
 
 
 # --------------------- plt reslice ----------------------
@@ -285,11 +291,21 @@ filtered10 = nonlinear_filter(Resliced_image,20,20,0.2)
 # plt.imshow(Resliced_image[Slice,:,:])
 # plt.show()
 # ---------------------- plt nonlinear ---------------
+# plt.subplot(1, 2, 1)
+# plt.imshow(array_of_data[Slice,:,:])
+# plt.subplot(1, 2, 2)
+# plt.imshow(filtered10[Slice,:,:])
+# plt.show()
+
 plt.subplot(1, 2, 1)
-plt.imshow(filtered5[Slice,:,:])
+plt.imshow(array_of_data[Slice,:,:])
+plt.xlabel('X')
+plt.ylabel('Y')
+print(Resliced_image.shape)
 plt.subplot(1, 2, 2)
-plt.imshow(filtered10[Slice,:,:])
+plt.imshow(Resliced_image)
 plt.show()
+
 
 
 
