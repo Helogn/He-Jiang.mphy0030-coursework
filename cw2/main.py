@@ -157,6 +157,31 @@ import PIL
 # ----------------------------------------------------------------------------------
 # ----------------------------------------------------------------------------------
 
+def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
+    size_of_image = Ori_Image.shape
+
+    # Three Matrix to store transfered indexs of coordinate
+    Coor_Matrix = np.zeros([3,size_of_image[0],size_of_image[1],size_of_image[2]])
+
+    norm_X = np.linalg.norm(x)
+    norm_Y = np.linalg.norm(y)
+    norm_Z = np.linalg.norm(z)
+    print('finish one ')
+    for i in range(size_of_image[0]):
+        for j in range(size_of_image[1]):
+            for k in range(size_of_image[2]):
+                Coor_Matrix[0,i,j,k] = np.dot([i,j,k],x)/norm_X
+                Coor_Matrix[1,i,j,k] = np.dot([i,j,k],y)/norm_Y
+                Coor_Matrix[2,i,j,k] = np.dot([i,j,k],z)/norm_Z
+
+    print('finish two ')
+    # create output image
+    range_of_coor = np.zeros([3,2])
+    range_of_coor[0,0] = np.max(Coor_Matrix[0,:,:,:]);range_of_coor[0,1] = np.min(Coor_Matrix[0,:,:,:])
+    range_of_coor[1,0] = np.max(Coor_Matrix[1,:,:,:]);range_of_coor[1,1] = np.min(Coor_Matrix[1,:,:,:])
+    range_of_coor[2,0] = np.max(Coor_Matrix[2,:,:,:]);range_of_coor[2,1] = np.min(Coor_Matrix[2,:,:,:])
+
+    return norm_X
 
 def nonlinear_filter(Image,iteration = 5, K = 30, L = 0.2):
 
@@ -276,8 +301,8 @@ data = sitk.ReadImage(Path_of_image )
 array_of_data = sitk.GetArrayFromImage(data)
 Slice = 100
 # Reslice Part
-Resliced_image = reslice(array_of_data[Slice,:,:],x = [0,2], y = [2,0])
-# Resliced_image = reslice(array_of_data,[1,0,0],[0.3,1,0],[0,0,1])
+# Resliced_image = reslice(array_of_data[Slice,:,:],x = [0,2], y = [2,0])
+Resliced_image = reslice(array_of_data,[1,0,0],[0,1,0],[0,0,1])
 
 # filtered5 = nonlinear_filter(Resliced_image,5,20,0.2)
 # filtered10 = nonlinear_filter(Resliced_image,20,20,0.2)
