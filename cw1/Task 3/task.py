@@ -150,7 +150,7 @@ class Image3D :
             # print('finish one slice')
         output[np.isnan(output)] = 0
         for A in range(1,sz[0]-1):
-            output[A,:,:] = output[A-1,:,:]/6 + output[A,:,:]/6 + output[A,:,:] * 4 /6
+            output[A,:,:] = output[A-1,:,:]/6 + output[A+1,:,:]/6 + output[A,:,:] * 4 /6
 
         # 
 

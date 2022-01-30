@@ -23,3 +23,23 @@ Debug: File:() Line:(0) Build new data node. (2022-01-06 15:33:59 周四)
 Debug: File:() Line:(0) Build new pipeline. (2022-01-06 15:33:59 周四)
 Debug: File:() Line:(0) CrossLine setShown 0  true (2022-01-06 15:33:59 周四)
 Debug: File:() Line:(0) CrossLine setShown 1 (2022-01-06 15:33:59 周四)
+
+
+
+------------ Start ------------
+Start time??(2022-01-30 11:11:25 周日)
+
+Debug: File:() Line:(0) Build new data node. (2022-01-30 11:11:25 周日)
+Debug: File:() Line:(0) Build new pipeline. (2022-01-30 11:11:25 周日)
+Debug: File:() Line:(0) CrossLine setShown 0  false (2022-01-30 11:11:25 周日)
+Debug: File:() Line:(0) CrossLine setShown 2 (2022-01-30 11:11:25 周日)
+
+
+
+------------ Start ------------
+Start time??(2022-01-30 11:11:30 周日)
+
+Debug: File:() Line:(0) Build new data node. (2022-01-30 11:11:30 周日)
+Debug: File:() Line:(0) Build new pipeline. (2022-01-30 11:11:30 周日)
+Debug: File:() Line:(0) CrossLine setShown 0  false (2022-01-30 11:11:30 周日)
+Debug: File:() Line:(0) CrossLine setShown 2 (2022-01-30 11:11:30 周日)
