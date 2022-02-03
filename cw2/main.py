@@ -7,6 +7,8 @@ import matplotlib.image as img
 import numpy as np
 
 def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
+
+    # normalise input vector
     x = x/np.linalg.norm(x)
     y = y/np.linalg.norm(y)
     z = z/np.linalg.norm(z)
@@ -15,9 +17,6 @@ def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
     # Three Matrix to store transfered indexs of coordinate
     Coor_Matrix = np.zeros([3,size_of_image[0],size_of_image[1],size_of_image[2]])
 
-    norm_X = np.linalg.norm(x)
-    norm_Y = np.linalg.norm(y)
-    norm_Z = np.linalg.norm(z)
     print('finish one ')
                 
     # faster method to calculate reslice coordinate
@@ -26,13 +25,13 @@ def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
     for i in range (2):
         for k in range(size_of_image[2]):
 
-            Coor_Matrix[0,i,0,k] = np.dot([i,0,k],x)/norm_X
-            Coor_Matrix[1,i,0,k] = np.dot([i,0,k],y)/norm_Y
-            Coor_Matrix[2,i,0,k] = np.dot([i,0,k],z)/norm_Z
+            Coor_Matrix[0,i,0,k] = np.dot([i,0,k],x)
+            Coor_Matrix[1,i,0,k] = np.dot([i,0,k],y)
+            Coor_Matrix[2,i,0,k] = np.dot([i,0,k],z)
 
-            Coor_Matrix[0,i,1,k] = np.dot([i,1,k],x)/norm_X
-            Coor_Matrix[1,i,1,k] = np.dot([i,1,k],y)/norm_Y
-            Coor_Matrix[2,i,1,k] = np.dot([i,1,k],z)/norm_Z
+            Coor_Matrix[0,i,1,k] = np.dot([i,1,k],x)
+            Coor_Matrix[1,i,1,k] = np.dot([i,1,k],y)
+            Coor_Matrix[2,i,1,k] = np.dot([i,1,k],z)
 
         G_X = Coor_Matrix[0,i,1,:] - Coor_Matrix[0,i,0,:]
         G_Y = Coor_Matrix[1,i,1,:] - Coor_Matrix[1,i,0,:]
