@@ -1,6 +1,3 @@
-1,2,1)
-plt.imshow(data[20,:,:])
-print(Filtered_image.shape)
-plt.subplot(1,2,2)
-plt.imshow(Filtered_image[20,:,:])
-plt.show()
+
+
+

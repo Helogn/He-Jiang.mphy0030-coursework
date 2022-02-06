@@ -1,169 +1,45 @@
-from cmath import nan
-from inspect import Traceback
 import numpy as np
 import matplotlib.pyplot  as plt
-from scipy.interpolate import griddata,LinearNDInterpolator
-from PIL import ImageFilter, Image
+from scipy.interpolate import griddata
+from scipy import ndimage
 
 class Image3D :
 
-    def __init__(self,Array,dims =[1,1,1] ):
+    def __init__(self,Array):
+        # input: 
+        #        Array: input image for transfering
+        #    
 
+        self.sz = Array.shape
 
+        # translate transformation centre point from corner to centre point
+        self.offset = np.array(self.sz) / 2 *-1 
         self.Array = Array
-        self.dims = dims
-        
-        sz = Array.shape
-        self.sz = sz
-        Coordinate_Matrix = []
-        
-        for i in range (sz[0]):
-            for j in range (sz[1]):
-                for k in range (sz[1]):
-                    Coordinate_Matrix.append([i,j,k,Array[i,j,k]])
-        print(' finish Creating Matrix')
-        Coordinate_Matrix = np.array(Coordinate_Matrix)
-        Coordinate_Matrix = np.transpose(Coordinate_Matrix)
-        self.Value_Matrix = Coordinate_Matrix.copy()
-        Coordinate_Matrix[3,:] = 1
-        # print('max = ' + str(np.max(Coordinate_Matrix,1)))
-        # print('min = ' + str(np.min(Coordinate_Matrix,1)))
-        self.Coordinate_Matrix = Coordinate_Matrix
 
 
+    #     return output
     def warp(self,affine):
+        # computes a warped 3D image, with all voxel intensities interpolated by trilinear interpolation method
+        # input: 
+        #       affine: homogeneous matrix
+        # output:
+        #       output: image 
+        self.matrix = np.linalg.inv(affine)
+        Transfered_image = ndimage.affine_transform(self.Array,self.matrix)
 
-        self.matrix = affine.trans
-        
-        Result = np.dot(self.matrix, self.Coordinate_Matrix)
-        # Value_result = np.transpose(Result)
-        Result[3,:] = self.Value_Matrix[3,:]
-
-        print(' finish Calculating Matrix')
-        sz_Result = Result.shape
-        Max = np.max(Result,1)
-        Min = np.min(Result,1)
-        # ------------------ +- ------------------------
-        Result[0,:] = Result[0,:] - Min[0]
-        Result[1,:] = Result[1,:] - Min[1]
-        Result[2,:] = Result[2,:] - Min[2]
-
-        Max = np.max(Result,1)
-        Min = np.min(Result,1)
-        Range = np.int16(Max)-np.int16(Min)
-        # -------------------------------------------
-        # self.Result2 = np.floor(np.zeros([Range[0]+1,Range[1]+1,Range[2]+1],dtype='int32')-1000)
-        # print(sz_Result[1])
-        # for N in range (sz_Result[1]):
-
-        #     tx = np.int16(np.floor(Result[0,N])-self.matrix[0,3])
-        #     ty = np.int16(np.floor(Result[1,N])-self.matrix[1,3])
-        #     tz = np.int16(np.floor(Result[2,N])-self.matrix[2,3])
-        #     self.Result2[tx,ty,tz] = (Result[3,N])
-
-        # print('finish Transfor')
-
-        #long running
-        #do something other
-
-        # --------------------------------------------------------------------------
-        # # interpolation        
-        # x = np.linspace(0,Range[0],Range[0]+1)
-        # y = np.linspace(0,Range[1],Range[1]+1)
-        # z = np.linspace(0,Range[2],Range[2]+1)
-        # # xg, yg, zg  = np.meshgrid(x, y,z, indexing='ij', sparse=True)
-        # xg, yg, zg  = np.meshgrid(x, y,z)
-        # # self.Result2 = griddata(np.transpose(Result[0,:]), Result[3,:], (xg,yg ), method='linear')
-        # # X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
-        # interp = LinearNDInterpolator(list(zip(Result[0,:],Result[1,:],Result[2,:])), Result[3,:])
-        
-        # print(' finish Interpolation')
-
-        # self.Result2 = interp(xg, yg, zg)
-        # print(self.Result2.shape)
-        # ----------------------------------------------------------------------------
-
-        # ------------------------------------------ test 2-------------------------
-        
-        # x = Result[0,:].reshape(self.sz)
-        # y = Result[1,:].reshape(self.sz)
-        # z = Result[2,:].reshape(self.sz)
-        # v = Result[3,:].reshape(self.sz)
-        # x = np.linspace(0,Range[0],Range[0]+1)
-        # y = np.linspace(0,Range[1],Range[1]+1)
-        # z = np.linspace(0,Range[2],Range[2]+1)
-        # gx,gy,gz = np.mgrid[0:Range[0]:Range[0]+1j,0:Range[1]:Range[1]+1j,0:Range[2]:Range[2]+1j]
-        # # interp = griddata(np.array([np.reshape(x,-1),np.reshape(y,-1),np.reshape(z,-1)]).T, np.reshape(v,-1))
-        # interp = griddata(np.transpose (Result[0:3,:]), np.transpose(Result[3,:]) ,(gx,gy,gz) ,method='linear')
-        # print(x.shape)
-
-        # ---------------------------- test 3 -------------------------------------
-        # x = Result[0,:].reshape(self.sz)
-        # y = Result[1,:].reshape(self.sz)
-        # z = Result[2,:].reshape(self.sz)
-        # v = Result[3,:].reshape(self.sz)
-
-        # Output_x = x[7,:,:].reshape(-1); x_max = np.max(Output_x); x_min = np.min(Output_x)
-        # Output_y = y[7,:,:].reshape(-1); y_max = np.max(Output_y); y_min = np.min(Output_y)
-        # # Output_z = z[7,:,:].reshape(-1); z_max = np.max(Output_z); z_min = np.min(Output_z)      
-        # Output_v = v[7,:,:].reshape(-1)     
-        # x = np.linspace(x_min,(x_max),np.int16(x_max-x_min)+1)
-        # y = np.linspace((y_min),(y_max),np.int16(y_max-y_min)+1)
-        # # z = np.linspace((z_min),(z_max),np.int16(z_max-z_min)+1)
-        # # [X, Y ,Z] = np.meshgrid(x,y,z)
-        # X, Y  = np.meshgrid(x,y)
-        # # pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1),np.reshape(Z ,-1)]).T
-        # pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1)]).T
-        # A = np.array([Output_x,Output_y]).T
-        # B = np.squeeze(np.array([X,Y])).T
-        # interp = griddata(A, (Output_v) ,(X,Y) ,method='linear')
-        # --------------------- test4 ----------------------
-
-        x = Result[0,:].reshape(self.sz)
-        y = Result[1,:].reshape(self.sz)
-        z = Result[2,:].reshape(self.sz)
-        v = Result[3,:].reshape(self.sz)
-        x_max = np.max(Result[0,:]); x_min = np.min(Result[0,:])
-        y_max = np.max(Result[1,:]); y_min = np.min(Result[1,:])
-        z_max = np.max(Result[2,:]); z_min = np.min(Result[2,:])
-        
-        x1 = np.linspace(x_min,(x_max),np.int16(x_max-x_min)+1)
-        y1 = np.linspace((y_min),(y_max),np.int16(y_max-y_min)+1)
-        X, Y  = np.meshgrid(x1,y1)
-        print(len(x1))
-        sz = x.shape
-        output = np.zeros(np.int16([sz[0],len(y1),len(x1)]))
-        for A in range(sz[0]):
-            Output_x = x[A,:,:].reshape(-1)
-            Output_y = y[A,:,:].reshape(-1)
-            Output_v = v[A,:,:].reshape(-1)     
-            # z = np.linspace((z_min),(z_max),np.int16(z_max-z_min)+1)
-            # [X, Y ,Z] = np.meshgrid(x,y,z)
-            
-            # pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1),np.reshape(Z ,-1)]).T
-            pix_coords = np.array([np.reshape(X, -1) ,np.reshape(Y ,-1)]).T
-            point = np.array([Output_x,Output_y]).T
-            B = np.squeeze(np.array([X,Y])).T
-            interp = griddata(point, (Output_v) ,(X,Y) ,method='linear')
-            # print(interp.shape)
-            output[A,:,:] = np.array(interp) # Z Y X
-            # print('finish one slice')
-        output[np.isnan(output)] = 0
-        for A in range(1,sz[0]-1):
-            output[A,:,:] = output[A-1,:,:]/6 + output[A+1,:,:]/6 + output[A,:,:] * 4 /6
-
-        # 
-
-
-
-        return output
-
+        return Transfered_image
 
 class Affinetransform :
     def __init__(self, trans = []):
+        # input parameter of homogeneous matrix
+        #       parameter = [] : execute random_transform_generator
+        #       parameter = [Rz,Ry,Rx,Tz,Ty,Tx] : from Rotate angle to Translation
+        #       parameter = [Rz,Ry,Rx,Tz,Ty,Tx,Scale] : Rotate angle | Translation | scale
+        #       parameter = [Rz,Ry,Rx,Tz,Ty,Tx,Sz,Sy,Sx,hz,hy,hx] : Rotate angle | Translation | scale | shear
         
         length = len(trans)
 
+        # error wrong type input
         if isinstance(trans,(list,float,np.ndarray)) == False:
             trans = np.array(trans)
             print('Error Input Vertor Type')
@@ -192,12 +68,11 @@ class Affinetransform :
         if length == 12:
             self.trans = self.affine_transform(trans)
 
-        print('parameter of matrix = \n' + str(self.trans))
+        # print('parameter of matrix = \n' + str(self.trans))
 
 
     def rigid_transform (self, parameter ):
-        
-        # judge data type
+        # input:  parameterL  accept 6/7/12 numbers of parameter for transformation
 
         length = len(parameter)
 
@@ -210,27 +85,28 @@ class Affinetransform :
 
         # Rigid transformation DOF = 6
         if length == 6:
-            Homogeneous = np.zeros([4,4])
-            # [Xangle,Yangle,Zangle,X_T,Y_T,Z_T,Scale]
 
-            Rx = parameter[0] * 2 * np.pi /360
+            Homogeneous = np.zeros([4,4])
+            # parameter = []
+
+            Rx = parameter[2] * 2 * np.pi /360
             Ry = parameter[1] * 2 * np.pi /360
-            Rz = parameter[2] * 2 * np.pi /360
-            Tx = parameter[3]
+            Rz = parameter[0] * 2 * np.pi /360
+            Tx = parameter[5]
             Ty = parameter[4]
-            Tz = parameter[5]
+            Tz = parameter[3]
 
 
             # Rotate part
-            Rotate_Matrix_x =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
+            Rotate_Matrix_z =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
             Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
-            Rotate_Matrix_z =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
-            Rotate_Matrix = np.dot(Rotate_Matrix_x,np.dot(Rotate_Matrix_y, Rotate_Matrix_z))
+            Rotate_Matrix_x =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
+            Rotate_Matrix = np.dot(Rotate_Matrix_z,np.dot(Rotate_Matrix_y, Rotate_Matrix_x))
             # A3D = np.dot(R_X,np.dot(R_Y,R_Z))
             Homogeneous[0:3,0:3] = Rotate_Matrix
 
             # Translation Part
-            T = [Tx, Ty, Tz]
+            T = [Tz, Ty, Tx]
             Homogeneous[0:3,3] = T
 
             Homogeneous[3,3] = 1
@@ -240,14 +116,14 @@ class Affinetransform :
         # Rigid transformation DOF = 7
         if length == 7:
             Homogeneous = np.zeros([4,4])
-            # [Xangle,Yangle,Zangle,X_T,Y_T,Z_T,Scale]
+            # [Zangle,Yangle,Xangle,Z_T,Y_T,X_T,Scale]
 
-            Rx = parameter[0] * 2 * np.pi /360
+            Rx = parameter[2] * 2 * np.pi /360
             Ry = parameter[1] * 2 * np.pi /360
-            Rz = parameter[2] * 2 * np.pi /360
-            Tx = parameter[3]
+            Rz = parameter[0] * 2 * np.pi /360
+            Tx = parameter[5]
             Ty = parameter[4]
-            Tz = parameter[5]
+            Tz = parameter[3]
             Scale = parameter[6]
 
 
@@ -256,7 +132,7 @@ class Affinetransform :
             Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
             Rotate_Matrix_z =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
             Rotate_Matrix = np.dot(Rotate_Matrix_x,np.dot(Rotate_Matrix_y, Rotate_Matrix_z))
-            # A3D = np.dot(R_X,np.dot(R_Y,R_Z))
+
             Homogeneous[0:3,0:3] = Rotate_Matrix * Scale
 
             # Translation Part
@@ -267,31 +143,62 @@ class Affinetransform :
             
             return Homogeneous
 
-    def affine_transform (self, par):
+    def affine_transform (self, parameter):
         
-        # judge data type
-        length = len(par)
+        length = len(parameter)
 
         Homogeneous = np.zeros([4,4])
 
         if length == 12:
 
-            Homogeneous[0:3,0:3] = [[par[0],par[1],par[2]],[par[3],par[4],par[5]],[par[6],par[7],par[8]]]
-            Homogeneous[0:3,3] = [par[9],par[10],par[11]]
+            # [Zangle,Yangle,Xangle,Z_T,Y_T,X_T,Z_Scale,Y_Scale,X_Scale,Z_Shear,Y_shear,X_Shear]
+            # above sequence[rotate,translation,scale,shear]
+
+            Rx = parameter[2] * 2 * np.pi /360
+            Ry = parameter[1] * 2 * np.pi /360
+            Rz = parameter[0] * 2 * np.pi /360
+            Tx = parameter[5]
+            Ty = parameter[4]
+            Tz = parameter[3]
+            Scale = np.zeros([3,3])
+            Scale[0,0] = abs(parameter[8])
+            Scale[1,1] = abs(parameter[7])
+            Scale[2,2] = abs(parameter[6])
+
+            # Shear Matrix
+            Shear = np.zeros([3,3])
+            Shear[0,0] = 1;Shear[1,1] = 1;Shear[2,2] = 1
+            Shear[0,1] = parameter[9];Shear[0,2] = parameter[11]
+            Shear[1,0] = parameter[10];Shear[0,2] = parameter[10]
+            Shear[2,0] = parameter[11];Shear[0,1] = parameter[9]
+
+            # Rotate part
+            Rotate_Matrix_z =np.array([[1, 0, 0], [0, np.cos(Rx), -np.sin(Rx)], [0, np.sin(Rx), np.cos(Rx)]])
+            Rotate_Matrix_y =np.array([[np.cos(Ry), 0, np.sin(Ry)], [0, 1, 0], [-np.sin(Ry), 0, np.cos(Ry)]])
+            Rotate_Matrix_x =np.array([[np.cos(Rz), -np.sin(Rz), 0], [np.sin(Rz), np.cos(Rz), 0], [0, 0, 1]])
+            Rotate_Matrix = np.dot(Rotate_Matrix_z,np.dot(Rotate_Matrix_y, Rotate_Matrix_x))
+
+            Homogeneous[0:3,0:3] = np.dot(Rotate_Matrix,np.dot(Shear,Scale))
+
+            # Translation Part
+            T = [Tx, Ty, Tz]
+            Homogeneous[0:3,3] = T 
             Homogeneous[3,3] = 1
 
             return Homogeneous
 
     def random_transform_generator (self,strength = 1):
-        # strength from 1 to higher value ->  small change to super change
+        # input: strength is powerful as strength increases
 
         Matrix = np.zeros([4,4])
         n, m = 3, 4
 
+        # SVD makes sure u is an affine transformation matrix
         H = np.random.rand(n, m)
         u, s, vh = np.linalg.svd(H, full_matrices=False)
         u = np.round(u,4)
-        
+        Matrix[0:3,0:3] = u
+
         # define Homo Matrix
         Matrix[0:3,0:3] = u 
         Matrix[0:3,3] = H[:,0] 
@@ -300,39 +207,71 @@ class Affinetransform :
         # define strength parameter
         # change translation strength
         Matrix[0:3,3] = H[:,0] * (strength + 1)
-
+        
         # add Shear influence
         Matrix[0,1:3] = Matrix[0,1:3] * strength
         Matrix[1,0] = Matrix[1,0] * strength
         Matrix[2,0:2] = Matrix[2,0:2] * strength
 
-
+        Matrix[0,0] = abs(Matrix[0,0]) +2
+        Matrix[1,1] = abs(Matrix[1,1]) +2 
+        Matrix[2,2] = abs(Matrix[2,2]) +2 
 
         return Matrix
 
 
-Image = np.load('image_train00.npy')
-obj = Image3D(Image)
+# --------------------------------------------- ------------------------------------
+# ------------------------------------main part ------------------------------------
+
+# load image
+Image1 = np.load('image_train00.npy')
+obj = Image3D(Image1)
 # Transformation = Affinetransform([0,10,0,2,0,0,2])
 Transformation = Affinetransform()
-print(Transformation.random_transform_generator(3))
-# print(Transformation.affine_transform())
-# Transformation = Affinetransform()
-result = obj.warp(Transformation)
 
-# print(result.shape)
-plt.subplot(2, 2, 1)
-plt.imshow(Image[10,:,:])
-plt.hot()
-plt.subplot(2, 2, 2)
-plt.imshow(result[10,:,:])
-# plt.savefig('test.png')
 
-plt.subplot(2, 2, 3)
-plt.imshow(result[15,:,:])
+# Manually define 10 rigid and affine transformation
+T1 = Affinetransform([0,0,30,0,0,0]) # rotate
+T2 = Affinetransform([45,0,0,0,0,0]) # rotate
+T3 = Affinetransform([0,0,0,0,3,30])  # translation
+T4 = Affinetransform([0,0,0,20,3,3])  # translation
+T5 = Affinetransform([0,0,0,0,0,0,1])  # scale
+T6 = T3.trans* T1.trans
+T7 = T5.trans* T3.trans *T1.trans
+T8 = T4.trans* T2.trans
+T9 = T5.trans* T4.trans * T2.trans
+T10 = T5.trans* T4.trans* T3.trans* T2.trans* T1.trans
 
-plt.subplot(2, 2, 4)
-plt.imshow(result[20,:,:])
+# Generate the warped images using above transformations
 
-plt.show()
+warped_image1 = obj.warp(T1.trans)
+warped_image2 = obj.warp(T2.trans)
+warped_image3 = obj.warp(T3.trans)
+warped_image4 = obj.warp(T4.trans)
+warped_image5 = obj.warp(T5.trans)
+warped_image6 = obj.warp(T6)
+warped_image7 = obj.warp(T7)
+warped_image8 = obj.warp(T8)
+warped_image9 = obj.warp(T9)
+warped_image10 = obj.warp(T10)
+
+
+
+# Generate 10 different randomly warped images and plot 5 image slices for each transformed image at different z depths
+Random = Affinetransform()
+result = obj.warp(Random.trans)
+
+# Generate images with 5 different values for the strength parameter
+Homogeneous_Matrix = Random.random_transform_generator(1)
+result1 = obj.warp(Homogeneous_Matrix)
+Homogeneous_Matrix = Random.random_transform_generator(2)
+result2 = obj.warp(Homogeneous_Matrix)
+Homogeneous_Matrix = Random.random_transform_generator(3)
+result3 = obj.warp(Homogeneous_Matrix)
+Homogeneous_Matrix = Random.random_transform_generator(4)
+result4 = obj.warp(Homogeneous_Matrix)
+Homogeneous_Matrix = Random.random_transform_generator(5)
+result5 = obj.warp(Homogeneous_Matrix)
+
+
 

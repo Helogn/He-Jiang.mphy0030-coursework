@@ -1,171 +1,138 @@
 # 2022-1-2
-from scipy.interpolate import griddata
-from PIL import Image
+from numpy.lib.function_base import meshgrid
+# from PIL import Image
 import SimpleITK as sitk
 import matplotlib.pyplot  as plt
 import matplotlib.image as img
 import numpy as np
 
-def reslice (Ori_Image,x = [1,0,0],y = [0,1,0],z = [0,0,1]):
+def interpolation_trilinear(image,point):
+    # This function is to obtain interpolated 2D-plane from provided points' coordinates.
+    # Use trilinear interpolation by utilising selected three points which are considered in the expected plane.
+    # Return interpolated value from image.
+    
+    # Input:
+    #       Image : 3D-array. 3D data which is used to obtain values of interpolated points.
+    #       Point : array[3,n]. provided points which need to be interpolated.
+    #               Column 0 is coordinate for the first point. this array includes n points' coordinates.
+    # Output:
+    #       output: 2D-array. interpolated plane points from above provided points
 
+    
+
+    point = np.array(point)
+    sz = image.shape
+    sz_point = point.shape
+    output = np.zeros([1,sz_point[1]])
+    for n in range(sz_point[1]):
+
+        # calculate related 8 point value from P1 to P8
+        z = point[0,n]
+        y = point[1,n]
+        x = point[2,n]
+
+        floor_z = np.floor(z)
+        ceil_z = np.floor(z+1)
+        floor_y = np.floor(y)
+        ceil_y = np.floor(y+1)
+        floor_x = np.floor(x)
+        ceil_x = np.floor(x+1)
+
+        if floor_z >= 0 and ceil_z < sz[0] and floor_y >= 0 and ceil_y < sz[1] and floor_x >= 0 and ceil_x < sz[2]:
+            
+            P1 = tuple(np.int16([floor_z,floor_y,floor_x]))
+            P2 = tuple(np.int16([floor_z,floor_y,ceil_x]))
+            P3 = tuple(np.int16([floor_z,ceil_y ,ceil_x]))
+            P4 = tuple(np.int16([floor_z,ceil_y,floor_x]))
+            P5 = tuple(np.int16([ceil_z,floor_y,floor_x]))
+            P6 = tuple(np.int16([ceil_z,floor_y,ceil_x]))
+            P7 = tuple(np.int16([ceil_z,ceil_y,ceil_x]))
+            P8 = tuple(np.int16([ceil_z,ceil_y,floor_x]))
+
+            # calculate value of this voxel
+            # x axes
+            # print(image[P1])
+            V12 = image[P1] * (x-P1[2]) + image[P2] * (P2[2] - x)
+            V43 = image[P4] * (x-P4[2]) + image[P3] * (P2[2] - x)
+            V56 = image[P5] * (x-P5[2]) + image[P6] * (P6[2] - x)
+            V87 = image[P8] * (x-P8[2]) + image[P7] * (P7[2] - x)
+            # if V12 > 0 :
+                # print(V12)
+
+            # y axis
+            V1234 = V12 * (y - P1[1]) + V43 * (P4[1] - y)
+            V5678 = V56 * (y - P5[1]) + V87 * (P8[1] - y)
+
+            # z axis
+            output[0,n] = V1234* (z - P1[0]) + V5678 * (P5[0] - z)
+            # print(output[0,n])
+
+    return np.array(output)
+
+
+def reslice (Ori_Image,P1 = [0,0,0],P2 = [0,1,0],P3 = [0,0,1]):
+    # This function is to obtain a slice from input 3D data. 
+    # User should select three points which are considered in the expected plane.
+    # This function will calculate related plane function and interpolate related points.
+    
+    # Input:
+    #       Image : array/list.  Input 3D data.
+    #       P1,P2,P3: array[Z,Y,X]. includes coordinates in three axises(Z,Y,X) 
+    # Output:
+    #       zz, yy, xx: array. meshgrid in three axises. each size is same as input data.
+    #       output: array[Y,X]. resliced plane in 2D. This 2d array can also be regard as z value for given x,y variants. 
+
+
+    sz = Ori_Image.shape
+
+    Ori_max = np.max(Ori_Image)
+    Ori_min = np.min(Ori_Image)
+    # Ori_Image = (Ori_Image - Ori_min)/(Ori_max - Ori_min) * (255*2) - 255
+   # A = y1 (z2 - z3) + y2 (z3 - z1) + y3 (z1 - z2)
+    A = P1[1]*(P2[0] - P3[0]) + P2[1]*(P3[0] - P1[0]) + P3[1]*(P1[0] - P2[0])
+  #  B = z1 (x2 - x3) + z2 (x3 - x1) + z3 (x1 - x2)
+    B = P1[0]*(P2[2] - P3[2]) + P2[0]*(P3[2] - P1[2]) + P3[0]*(P1[2] - P2[2])
+  # C = x1 (y2 - y3) + x2 (y3 - y1) + x3 (y1 - y2)
+    C = P1[2]*(P2[1] - P3[1]) + P2[2]*(P3[1] - P1[1]) + P3[2]*(P1[1] - P2[1])
+  #  D = x1 (y2 z3 - y3 z2) + x2 (y3 z1 - y1 z3) + x3 (y1 z2 - y2 z1)
+    D = P1[2]*(P2[1]*P3[0] - P3[1]*P2[0]) + P2[2]*(P3[1]*P1[0] - P1[1]*P3[0]) + P3[2]*(P1[1]*P2[0] - P2[1]*P1[0])
     # normalise input vector
-    x = x/np.linalg.norm(x)
-    y = y/np.linalg.norm(y)
-    z = z/np.linalg.norm(z)
-    size_of_image = Ori_Image.shape
 
-    # Three Matrix to store transfered indexs of coordinate
-    Coor_Matrix = np.zeros([3,size_of_image[0],size_of_image[1],size_of_image[2]])
-
-    print('finish one ')
-                
-    # faster method to calculate reslice coordinate
-
-    # caiculate a row then expend to one plane
-    for i in range (2):
-        for k in range(size_of_image[2]):
-
-            Coor_Matrix[0,i,0,k] = np.dot([i,0,k],x)
-            Coor_Matrix[1,i,0,k] = np.dot([i,0,k],y)
-            Coor_Matrix[2,i,0,k] = np.dot([i,0,k],z)
-
-            Coor_Matrix[0,i,1,k] = np.dot([i,1,k],x)
-            Coor_Matrix[1,i,1,k] = np.dot([i,1,k],y)
-            Coor_Matrix[2,i,1,k] = np.dot([i,1,k],z)
-
-        G_X = Coor_Matrix[0,i,1,:] - Coor_Matrix[0,i,0,:]
-        G_Y = Coor_Matrix[1,i,1,:] - Coor_Matrix[1,i,0,:]
-        G_Z = Coor_Matrix[2,i,1,:] - Coor_Matrix[2,i,0,:]
-
-        for j in range(2,size_of_image[1]):
-            Coor_Matrix[0,i,j,:] = Coor_Matrix[0,i,0,:] + G_X * j
-            Coor_Matrix[1,i,j,:] = Coor_Matrix[1,i,0,:] + G_Y * j
-            Coor_Matrix[2,i,j,:] = Coor_Matrix[2,i,0,:] + G_Z * j
+    xx, yy = np.meshgrid(range(sz[2]), range(sz[1]))
     
-    # calculate a plane then expand to a volume
-    G_X = Coor_Matrix[0,1,:,:] - Coor_Matrix[0,0,:,:]
-    G_Y = Coor_Matrix[1,1,:,:] - Coor_Matrix[1,0,:,:]
-    G_Z = Coor_Matrix[2,1,:,:] - Coor_Matrix[2,0,:,:]
-    
-    for i in range (2,size_of_image[0]):
-        Coor_Matrix[0,i,:,:] = Coor_Matrix[0,0,:,:] + G_X * i
-        Coor_Matrix[1,i,:,:] = Coor_Matrix[1,0,:,:] + G_Y * i
-        Coor_Matrix[2,i,:,:] = Coor_Matrix[2,0,:,:] + G_Z * i
+    zz = (-A * xx - B * yy - D) * 1. /C
 
+    # plt.xlabel('x')
+    # plt.show()
 
-    print('finish two ')
-    # create output image
-    range_of_coor = np.zeros([3,2])
-    Coor_Matrix = np.round(Coor_Matrix)
-    range_of_coor[0,0] = np.max(Coor_Matrix[0,:,:,:]);range_of_coor[0,1] = np.min(Coor_Matrix[0,:,:,:])
-    range_of_coor[1,0] = np.max(Coor_Matrix[1,:,:,:]);range_of_coor[1,1] = np.min(Coor_Matrix[1,:,:,:])
-    range_of_coor[2,0] = np.max(Coor_Matrix[2,:,:,:]);range_of_coor[2,1] = np.min(Coor_Matrix[2,:,:,:])
-    Range_Cor = []
-    Range_Cor.append(np.int16(range_of_coor[0,0] - range_of_coor[0,1]))
-    Range_Cor.append(np.int16(range_of_coor[1,0] - range_of_coor[1,1]))
-    Range_Cor.append(np.int16(range_of_coor[2,0] - range_of_coor[2,1]))
-    Range_Cor = np.array(Range_Cor)
+    x = np.reshape(xx,-1)
+    y = np.reshape(yy,-1)
+    z = np.reshape(zz,-1)
 
-    Coor_Matrix[0,:,:,:] = Coor_Matrix[0,:,:,:] - range_of_coor[0,1]
-    Coor_Matrix[1,:,:,:] = Coor_Matrix[1,:,:,:] - range_of_coor[1,1]
-    Coor_Matrix[2,:,:,:] = Coor_Matrix[2,:,:,:] - range_of_coor[2,1]
+    output = interpolation_trilinear(Ori_Image,[z,y,x])
 
-    # calculate output
+    output = np.reshape(output,[sz[1],sz[2]])
+    return zz, yy, xx, output
 
-    C_X = np.reshape(Coor_Matrix[0,:,:,:],-1)
-    C_Y = np.reshape(Coor_Matrix[1,:,:,:],-1)
-    C_Z = np.reshape(Coor_Matrix[2,:,:,:],-1)
-    Value = np.reshape(Ori_Image,-1)
-    
-
-    output = np.zeros([Range_Cor[0]+1,Range_Cor[1]+1,Range_Cor[2]+1])
-    Out_Image = output.copy()
-    Order = (np.where(np.min(Range_Cor) == Range_Cor))[0]
-
-
-    print('Range = ' + str(Range_Cor))
-
-    if Order[0] == 0:
-
-        Fir_axis = np.linspace(0,Range_Cor[1],Range_Cor[1]+1)
-        Sec_axis = np.linspace(0,Range_Cor[2],Range_Cor[2]+1)
-        mesh_F, mesh_S  = np.meshgrid(Fir_axis,Sec_axis,indexing='ij')
-        Jug_matrix = C_X.copy()
-        Fir_mat = C_Y.copy()
-        Sec_mat = C_Z.copy()
-
-    elif Order[0] == 1:
-
-        Fir_axis = np.linspace(0,Range_Cor[0],Range_Cor[0]+1)
-        Sec_axis = np.linspace(0,Range_Cor[2],Range_Cor[2]+1)
-        mesh_F, mesh_S  = np.meshgrid(Fir_axis,Sec_axis,indexing='ij')
-        Jug_matrix = C_Y.copy()
-        Fir_mat = C_X.copy()
-        Sec_mat = C_Z.copy()
-
-    elif Order[0] == 2:
-
-        Fir_axis = np.linspace(0,Range_Cor[0],Range_Cor[0]+1)
-        Sec_axis = np.linspace(0,Range_Cor[1],Range_Cor[1]+1)
-        mesh_F, mesh_S  = np.meshgrid(Fir_axis,Sec_axis,indexing='ij')
-        Jug_matrix = C_Z.copy()
-        Fir_mat = C_X.copy()
-        Sec_mat = C_Y.copy()
-
-    for i in range(Range_Cor[Order[0]]):
-        Index = np.array(np.where(Jug_matrix == i))
-        F = Fir_mat[Index] # first
-        S = Sec_mat[Index] # second
-        point = np.transpose(np.squeeze(np.array([F,S])))
-        V = np.transpose(Value[Index])
-        if len(point):
-            Max = np.max(point,axis=0)
-            Min = np.min(point,axis=0)
-
-            if Order[0] == 0:
-
-                if (np.max(Max[0]) != np.min(Min[0])):
-                    interp = griddata(point, V ,(mesh_F,mesh_S) ,method='linear')
-                    output[i,:,:] = np.squeeze(np.array(interp))
-                else:
-                    output[i,:,:] = nan
-
-            elif Order[0] == 1:
-                if (np.max(Max[0]) != np.min(Min[0])) and (np.max(Max[1]) != np.min(Min[1])) :
-                    interp = griddata(point, V ,(mesh_F,mesh_S) ,method='linear')
-                    output[:,i,:] = np.squeeze(np.array(interp))
-                else:
-                    output[:,i,:] = nan
-
-            elif Order[0] == 2:
-                if (np.max(Max[0]) != np.min(Min[0])):
-                    interp = griddata(point, V ,(mesh_F,mesh_S) ,method='linear')
-                    output[:,:,i] = np.squeeze(np.array(interp))
-                else:
-                    output[:,:,i] = nan
-        print(i)
-
-    if Order[0] == 0:
-        for I in range(1,Range_Cor[0]):
-            Out_Image[I,:,:] = output[I-1,:,:]/6 + output[I,:,:]/6 + output[I+1,:,:] * 4 /6    
-    elif Order[0] == 1:
-        for I in range(1,Range_Cor[1]):
-            Out_Image[:,I,:] = output[:,I-1,:]/6 + output[:,I+1,:]/6 + output[:,I,:] * 4 /6    
-    elif Order[0] == 2:
-        for I in range(1,Range_Cor[2]):
-            Out_Image[:,:,I] = output[:,:,I-1]/6 + output[:,:,I+1]/6 + output[:,:,I] * 4 /6    
-    return Out_Image
 
 def nonlinear_filter(Image,iteration = 5, K = 30, L = 0.2):
+    # This function is to do a nonlinear filter for input 3D data and return a 3D data with same size
+    # Perona and Malik developed a smoothing and edge detection method. 
+    # Their anisotropic diffusion filtering method is mathematically formulated as a diffusion process
 
-
-    # Image : input Image
-    # iteration: Times of Iteration
+    # Input:
+    #       Image : 3D-array/list.  Input 3D data.
+    #       iteration: constant. Times of iteration.
+    #       K:  constant. control depth of filter. bigger K means powerful filter.
+    #       L:  constant. parameter of equation. between 0.2-0.25.
+    # Output:
+    #       O_Image: 3D-array. size is same as input data
     
-    # Ori_Img = image
 
-    # halt
+    Image = np.array(Image)
     sz = Image.shape
+
+    # judge 2D or 3D data
     DIM = len(sz)
     if DIM == 2:
         # print(" DIM = 2 \n size = " + str(sz))
@@ -230,34 +197,87 @@ def nonlinear_filter(Image,iteration = 5, K = 30, L = 0.2):
         print('Wrong dimension of image')
         return
 
-
 # Image_Path
-Path_of_image = './0001_image.nii'
+Path_of_image = '0001_image.nii'
 Path_of_label = './0001_mask.nii'
 
 # Read Image Data
 data = sitk.ReadImage(Path_of_image )
 array_of_data = sitk.GetArrayFromImage(data)
-Slice = 100
 
-# Reslice Part
-# Resliced_image = reslice(array_of_data[Slice,:,:],x = [0,2], y = [2,0])
-Resliced_image = reslice(array_of_data,[1,0,0],[0,1,0],[0,0,1])
 
-# ------------------- 3D-filtering before re-slicing ------------------------------
+# Analyse the impact due to varying filter parameter values
+Filtered_image1 = nonlinear_filter(array_of_data,iteration = 3, K = 10, L = 0.2)
 
-# ------------------------------------------------
+Filtered_image2 = nonlinear_filter(array_of_data,iteration = 1, K = 10, L = 0.2)
+
+Filtered_image3 = nonlinear_filter(array_of_data,iteration = 3, K = 20, L = 0.2)
+
+
+# ------------------- 3D-filter before re-slicing ------------------------------
 # 3d_linear filter 
 Filtered_slice = nonlinear_filter(array_of_data)
-# Do a 3d slice
-Result1 = reslice(Filtered_slice)
+print('finish filter')
 
-# ------------------------------------------------
-#  reslice
-Resliced_slice = reslice(array_of_data,[1,1,0],[0,1,1],[1,0,1])
+# reslice
+z1, y1, x1, Result1 = reslice(Filtered_slice,[0,0,0],[50,150,0],[50,150,100])
+print('finish reslice')
+
+# ------------------- 3d-filter after re-slicing ------------------------------
+# reslice
+z2, y2, x2, Resliced_slice = reslice(array_of_data,[0,0,0],[50,150,0],[50,150,100])
+print('finish reslice')
 # 2d Linear filter
-sz = Resliced_slice.shape
-Result2 = np.zeros(sz)
-for i in range (sz[0]):
-    Result2[i,:,:] = nonlinear_filter(Resliced_slice[i,:,:])
+Result2 = nonlinear_filter(Resliced_slice)
+print('finish filter')
+
+print('mean of Result2   ' + str(np.mean(Result1)))
+print('mean of Result1   ' + str(np.mean(Result2)))
+print('std of Result2   ' + str(np.std(Result1)))
+print('std of Result1   ' + str(np.std(Result2)))
+print('mean of Subtraction between Result1 and Result2   ' + str(np.mean(Result1 - Result2)))
+print('std of Subtraction  between Result1 and Result2   ' + str(np.std(Result1 - Result2)))
+
+
+# -------------------- utilise the organ segmentation to help comparison ----------------------
+print('\n\n--------utilise the organ segmentation to help comparison---------')
+
+Label = sitk.ReadImage(Path_of_label)
+array_of_label = sitk.GetArrayFromImage(Label)
+array_of_data[array_of_label != 1] == 0 
+
+
+
+
+# -------------------------------------- plot part ----------------------------------------
+# plt.figure()
+# plt.subplot(1,2,1)
+# plt.imshow(Result1)
+# plt.title('3D-filtering before re-slicing')
+# plt.colorbar()
+# plt.subplot(1,2,2)
+# plt.imshow(Result2)
+# plt.title('re-slicing after 3d-filter')
+# plt.colorbar()
+# plt.show()
+
+# plt.figure()
+# plt.imshow(Resliced_slice)
+# plt.title('resliced image in 2D')
+# plt.xlabel('X axis')
+# plt.ylabel('Y axis')
+# plt.gray()
+# plt.show()
+
+
+
+# # plt3d_1 = plt.figure().gca(projection='3d')
+# # plt3d_1.scatter(np.reshape(z1,-1), np.reshape(y1,-1), np.reshape(x1,-1), c = np.reshape(Result1,-1),cmap = 'gray')
+
+# plt3d_2 = plt.figure().gca(projection='3d')
+# plt3d_2.scatter(np.reshape(z2,-1), np.reshape(y2,-1), np.reshape(x2,-1), c = np.reshape(Result2,-1),cmap = 'gray')
+# plt.title('resliced image in 3D')
+# plt.xlabel('X axis')
+# plt.ylabel('Y axis')
+# plt.show()
 
