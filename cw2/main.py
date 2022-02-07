@@ -217,21 +217,20 @@ Filtered_image3 = nonlinear_filter(array_of_data,iteration = 3, K = 20, L = 0.2)
 # ------------------- 3D-filter before re-slicing ------------------------------
 # 3d_linear filter 
 Filtered_slice = nonlinear_filter(array_of_data)
-print('finish filter')
 
 # reslice
 z1, y1, x1, Result1 = reslice(Filtered_slice,[0,0,0],[50,150,0],[50,150,100])
-print('finish reslice')
+
 
 # ------------------- 3d-filter after re-slicing ------------------------------
 # reslice
 z2, y2, x2, Resliced_slice = reslice(array_of_data,[0,0,0],[50,150,0],[50,150,100])
-print('finish reslice')
+
 # 2d Linear filter
 Result2 = nonlinear_filter(Resliced_slice)
-print('finish filter')
 
-print('mean of Result2   ' + str(np.mean(Result1)))
+
+print('\nmean of Result2   ' + str(np.mean(Result1)))
 print('mean of Result1   ' + str(np.mean(Result2)))
 print('std of Result2   ' + str(np.std(Result1)))
 print('std of Result1   ' + str(np.std(Result2)))
@@ -240,12 +239,38 @@ print('std of Subtraction  between Result1 and Result2   ' + str(np.std(Result1 
 
 
 # -------------------- utilise the organ segmentation to help comparison ----------------------
+# voxel from background with same value may affect our result.
+# we can use label to focus on a small region and compare two approaches without effect from background
+#
 print('\n\n--------utilise the organ segmentation to help comparison---------')
+print('------------to focus on a small region  ------------------------------')
 
 Label = sitk.ReadImage(Path_of_label)
 array_of_label = sitk.GetArrayFromImage(Label)
-array_of_data[array_of_label != 1] == 0 
+array_of_data[array_of_label[0,:,:,:] == 0] = 0 
 
+# ------------------- 3D-filter before re-slicing ------------------------------
+# 3d_linear filter 
+Filtered_slice = nonlinear_filter(array_of_data)
+
+# reslice
+z1, y1, x1, Result1 = reslice(Filtered_slice,[0,0,0],[200,57,130],[200,49,143])
+
+# ------------------- 3d-filter after re-slicing ------------------------------
+# reslice
+
+z2, y2, x2, Resliced_slice = reslice(array_of_data,[0,0,0],[200,57,130],[200,49,143])
+
+# 2d Linear filter
+Result2 = nonlinear_filter(Resliced_slice)
+
+def nan_if(arr, value):
+    return np.where(arr == value, np.nan, arr)
+
+print('small region: mean of Result2   ' + str(np.nanmean(nan_if(Result1,0))))
+print('small region: mean of Result1   ' + str(np.nanmean(nan_if(Result2,0))))
+print('small region: std of Result2   ' + str(np.nanstd(nan_if(Result1,0))))
+print('small region: std of Result1   ' + str(np.nanstd(nan_if(Result2,0))))
 
 
 
@@ -262,11 +287,11 @@ array_of_data[array_of_label != 1] == 0
 # plt.show()
 
 # plt.figure()
-# plt.imshow(Resliced_slice)
-# plt.title('resliced image in 2D')
+# plt.imshow(array_of_label[0,200,:,:])
+# # plt.title('resliced image in 2D')
 # plt.xlabel('X axis')
 # plt.ylabel('Y axis')
-# plt.gray()
+# # plt.gray()
 # plt.show()
 
 
